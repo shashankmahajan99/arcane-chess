@@ -1,6 +1,7 @@
 import React, { useRef, useMemo, useEffect } from 'react';
 import { useFrame } from '@react-three/fiber';
 import { Environment, Sky, Stars, useGLTF, Float, Sparkles } from '@react-three/drei';
+import { Physics, RigidBody, CylinderCollider, RapierRigidBody } from '@react-three/rapier';
 import * as THREE from 'three';
 import { Arena as ArenaType, ArenaTheme } from '../../types';
 import { ChessBoard } from './ChessBoard';
@@ -10,9 +11,11 @@ import { useAvatarStore } from '../../stores/avatarStore';
 interface ArenaProps {
   arena?: ArenaType;
   children?: React.ReactNode;
+  isFirstPerson?: boolean;
+  avatarRigidBodyRef?: React.RefObject<RapierRigidBody>;
 }
 
-export const Arena: React.FC<ArenaProps> = ({ arena, children }) => {
+export const Arena: React.FC<ArenaProps> = ({ arena, children, isFirstPerson, avatarRigidBodyRef }) => {
   const groupRef = useRef<THREE.Group>(null);
   const { myAvatarState, otherAvatars } = useAvatarStore();
 
@@ -24,63 +27,73 @@ export const Arena: React.FC<ArenaProps> = ({ arena, children }) => {
     return (
       <group>
         {/* Floor */}
-        <mesh position={[0, -0.5, 0]} receiveShadow>
-          <boxGeometry args={[40, 1, 40]} />
-          <meshPhysicalMaterial
-            color="#1a1a1a"
-            roughness={0.4}
-            metalness={0.8}
-            clearcoat={0.5}
-            clearcoatRoughness={0.2}
-            envMapIntensity={1.5}
-          />
-        </mesh>
+        <RigidBody type="fixed" colliders="cuboid">
+          <mesh position={[0, -0.5, 0]} receiveShadow>
+            <boxGeometry args={[40, 1, 40]} />
+            <meshPhysicalMaterial
+              color="#1a1a1a"
+              roughness={0.4}
+              metalness={0.8}
+              clearcoat={0.5}
+              clearcoatRoughness={0.2}
+              envMapIntensity={1.5}
+            />
+          </mesh>
+        </RigidBody>
         
         {/* Walls */}
-        <mesh position={[0, 10, -20]} receiveShadow>
-          <boxGeometry args={[40, 20, 1]} />
-          <meshPhysicalMaterial
-            color="#2d3748"
-            roughness={0.6}
-            metalness={0.3}
-            clearcoat={0.1}
-            clearcoatRoughness={0.05}
-            envMapIntensity={1.0}
-          />
-        </mesh>
-        <mesh position={[0, 10, 20]} receiveShadow>
-          <boxGeometry args={[40, 20, 1]} />
-          <meshPhysicalMaterial
-            color="#2d3748"
-            roughness={0.6}
-            metalness={0.3}
-            clearcoat={0.1}
-            clearcoatRoughness={0.05}
-            envMapIntensity={1.0}
-          />
-        </mesh>
-        <mesh position={[-20, 10, 0]} rotation={[0, Math.PI / 2, 0]} receiveShadow>
-          <boxGeometry args={[40, 20, 1]} />
-          <meshPhysicalMaterial
-            color="#2d3748"
-            roughness={0.6}
-            metalness={0.3}
-            clearcoat={0.1}
-            clearcoatRoughness={0.05}
-            envMapIntensity={1.0}
-          />
-        </mesh>
-        <mesh position={[20, 10, 0]} rotation={[0, Math.PI / 2, 0]} receiveShadow>
-          <boxGeometry args={[40, 20, 1]} />
-          <meshPhysicalMaterial
-            color="#2d3748"
-            roughness={0.6}
-            metalness={0.3}
-            clearcoat={0.1}
-            clearcoatRoughness={0.05}
-            envMapIntensity={1.0}
-          />
-        </mesh>
+        <RigidBody type="fixed" colliders="cuboid">
+          <mesh position={[0, 10, -20]} receiveShadow>
+            <boxGeometry args={[40, 20, 1]} />
+            <meshPhysicalMaterial
+              color="#2d3748"
+              roughness={0.6}
+              metalness={0.3}
+              clearcoat={0.1}
+              clearcoatRoughness={0.05}
+              envMapIntensity={1.0}
+            />
+          </mesh>
+        </RigidBody>
+        <RigidBody type="fixed" colliders="cuboid">
+          <mesh position={[0, 10, 20]} receiveShadow>
+            <boxGeometry args={[40, 20, 1]} />
+            <meshPhysicalMaterial
+              color="#2d3748"
+              roughness={0.6}
+              metalness={0.3}
+              clearcoat={0.1}
+              clearcoatRoughness={0.05}
+              envMapIntensity={1.0}
+            />
+          </mesh>
+        </RigidBody>
+        <RigidBody type="fixed" colliders="cuboid">
+          <mesh position={[-20, 10, 0]} rotation={[0, Math.PI / 2, 0]} receiveShadow>
+            <boxGeometry args={[40, 20, 1]} />
+            <meshPhysicalMaterial
+              color="#2d3748"
+              roughness={0.6}
+              metalness={0.3}
+              clearcoat={0.1}
+              clearcoatRoughness={0.05}
+              envMapIntensity={1.0}
+            />
+          </mesh>
+        </RigidBody>
+        <RigidBody type="fixed" colliders="cuboid">
+          <mesh position={[20, 10, 0]} rotation={[0, Math.PI / 2, 0]} receiveShadow>
+            <boxGeometry args={[40, 20, 1]} />
+            <meshPhysicalMaterial
+              color="#2d3748"
+              roughness={0.6}
+              metalness={0.3}
+              clearcoat={0.1}
+              clearcoatRoughness={0.05}
+              envMapIntensity={1.0}
+            />
+          </mesh>
+        </RigidBody>
       </group>
     );
   };
@@ -162,7 +175,8 @@ export const Arena: React.FC<ArenaProps> = ({ arena, children }) => {
 
   return (
     <group ref={groupRef}>
-      {/* Environment and Lighting */}
+      <Physics>
+        {/* Environment and Lighting */}
       <Environment preset="warehouse" />
       <Sky
         distance={450000}
@@ -253,8 +267,9 @@ export const Arena: React.FC<ArenaProps> = ({ arena, children }) => {
       {/* Avatar Rendering */}
       {myAvatarState && (
         <Avatar
-          avatarState={myAvatarState}
+          avatarState={{ ...myAvatarState, is_first_person: isFirstPerson ?? false }}
           isCurrentUser={true}
+          rigidBodyRef={avatarRigidBodyRef}
         />
       )}
 
@@ -285,6 +300,7 @@ export const Arena: React.FC<ArenaProps> = ({ arena, children }) => {
       </mesh>
 
       {children}
+    </Physics>
     </group>
   );
 };

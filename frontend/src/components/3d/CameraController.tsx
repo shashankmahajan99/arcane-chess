@@ -1,62 +1,28 @@
-import React, { useRef } from 'react';
-import { useFrame, useThree } from '@react-three/fiber';
-import { OrbitControls } from '@react-three/drei';
-import * as THREE from 'three';
-import { useAvatarStore } from '../../stores/avatarStore';
+import React from 'react';
+import { useFirstPersonCamera, FirstPersonState } from '../../hooks/useAvatarCamera';
+import { useFreeRoamCamera } from '../../hooks/useFreeRoamCamera';
 
-interface CameraControllerProps {
-  followAvatar?: boolean;
-  enableOrbitControls?: boolean;
-  children?: React.ReactNode;
+export interface CameraControllerProps {
+  controlMode: 'camera' | 'first-person';
+  onFirstPersonStateChange?: (state: FirstPersonState) => void;
+  initialPosition?: [number, number, number];
 }
 
-export const CameraController: React.FC<CameraControllerProps> = ({
-  followAvatar = true,
-  enableOrbitControls = true,
-  children
+export const CameraController: React.FC<CameraControllerProps> = ({ 
+  controlMode, 
+  onFirstPersonStateChange,
+  initialPosition = [3, 0.8, 3]
 }) => {
-  const orbitRef = useRef<any>(null);
-  const { camera } = useThree();
-  const { myAvatarState } = useAvatarStore();
-
-  // Camera follow logic
-  useFrame((state, delta) => {
-    if (followAvatar && myAvatarState && orbitRef.current) {
-      // Smooth camera following
-      const targetPosition = new THREE.Vector3(
-        myAvatarState.position.x,
-        myAvatarState.position.y + 2,
-        myAvatarState.position.z + 5
-      );
-      const targetLookAt = new THREE.Vector3(
-        myAvatarState.position.x,
-        myAvatarState.position.y,
-        myAvatarState.position.z
-      );
-      // Smooth interpolation
-      orbitRef.current.target.lerp(targetLookAt, delta * 2);
-      camera.position.lerp(targetPosition, delta * 1.5);
-    }
-  });
-
-  return (
-    <>
-      {enableOrbitControls && (
-        <OrbitControls
-          ref={orbitRef}
-          enablePan={true}
-          enableZoom={true}
-          enableRotate={true}
-          minDistance={3}
-          maxDistance={25}
-          minPolarAngle={0}
-          maxPolarAngle={Math.PI / 2}
-          target={[0, 1, 0]}
-          dampingFactor={0.1}
-          enableDamping
-        />
-      )}
-      {children}
-    </>
+  // Use first person camera hook when in first-person mode
+  useFirstPersonCamera(
+    controlMode === 'first-person',
+    onFirstPersonStateChange,
+    initialPosition
   );
+
+  // Use free roam camera hook when in camera mode
+  useFreeRoamCamera(controlMode === 'camera');
+
+  // This component doesn't render anything, it just manages camera controls
+  return null;
 };

@@ -138,18 +138,6 @@ export interface ChatMessage {
   type: 'chat' | 'system' | 'emote';
 }
 
-export interface AvatarState {
-  user_id: string;
-  position: Vector3;
-  rotation: number;
-  animation: string;
-  model_type: string;
-  color_scheme: string;
-  name: string;
-  accessories: string;
-  is_visible: boolean;
-}
-
 export interface ArenaSettings {
   lighting: {
     ambientIntensity: number;
@@ -172,4 +160,17 @@ export interface ArenaSettings {
     postProcessing: boolean;
     bloom: boolean;
   };
+}
+
+export interface AvatarState {
+  user_id: string;
+  position: Vector3;
+  rotation: number;
+  animation: string;
+  model_type: string;
+  color_scheme: string;
+  name: string;
+  accessories: string;
+  is_visible: boolean;
+  is_first_person: boolean;
 }

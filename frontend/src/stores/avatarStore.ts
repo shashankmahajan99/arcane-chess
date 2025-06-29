@@ -23,10 +23,12 @@ interface AvatarStoreState {
   // UI state
   showAvatarCustomization: boolean;
   selectedAvatarPart: string | null;
+  isFirstPerson: boolean;
   
   // Actions
   setMyAvatar: (avatar: Avatar | null) => void;
-  updateMyPosition: (position: Vector3, rotation?: number) => void;
+  setIsFirstPerson: (isFirstPerson: boolean) => void;
+  updateMyPosition: (position: Vector3, rotation?: number, isFirstPerson?: boolean) => void;
   updateOtherAvatar: (userId: string, state: AvatarState) => void;
   removeOtherAvatar: (userId: string) => void;
   setTargetPosition: (position: Vector3 | null) => void;
@@ -50,6 +52,7 @@ export const useAvatarStore = create<AvatarStoreState>()(
     movementSpeed: 2.0,
     showAvatarCustomization: false,
     selectedAvatarPart: null,
+    isFirstPerson: false,
 
     // Actions
     setMyAvatar: (avatar) => {
@@ -70,12 +73,13 @@ export const useAvatarStore = create<AvatarStoreState>()(
             name: avatar.name, // Added missing property
             accessories: avatar.accessories, // Added missing property
             is_visible: avatar.is_visible,
+            is_first_person: false,
           }
         });
       }
     },
 
-    updateMyPosition: (position, rotation) => {
+    updateMyPosition: (position, rotation, isFirstPerson) => {
       const { myAvatarState } = get();
       if (!myAvatarState) return;
 
@@ -83,6 +87,7 @@ export const useAvatarStore = create<AvatarStoreState>()(
         ...myAvatarState,
         position,
         rotation: rotation !== undefined ? rotation : myAvatarState.rotation,
+        is_first_person: isFirstPerson !== undefined ? isFirstPerson : myAvatarState.is_first_person,
       };
 
       set({ myAvatarState: newState });
@@ -145,6 +150,8 @@ export const useAvatarStore = create<AvatarStoreState>()(
       // Send animation to server
       // avatarService.playAnimation(animation);
     },
+
+    setIsFirstPerson: (isFirstPerson) => set({ isFirstPerson }),
 
     toggleCustomization: () => set(state => ({ 
       showAvatarCustomization: !state.showAvatarCustomization 

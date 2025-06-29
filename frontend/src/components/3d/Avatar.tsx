@@ -1,6 +1,7 @@
 import React, { useRef, useMemo, useEffect } from 'react';
 import { useFrame } from '@react-three/fiber';
 import { useGLTF, useAnimations, Text } from '@react-three/drei';
+import { useSpring, animated } from '@react-spring/three';
 import * as THREE from 'three';
 import { AvatarState } from '../../types';
 
@@ -13,10 +14,9 @@ interface AvatarProps {
 export const Avatar: React.FC<AvatarProps> = ({ 
   avatarState, 
   isCurrentUser = false, 
-  onClick 
+  onClick
 }) => {
   const groupRef = useRef<THREE.Group>(null);
-  const meshRef = useRef<THREE.Mesh>(null);
   
   // Load avatar model based on type
   const { scene, animations } = useGLTF(`/models/avatars/${avatarState.model_type}.glb`);
@@ -58,14 +58,12 @@ export const Avatar: React.FC<AvatarProps> = ({
 
   // Handle animations
   useEffect(() => {
-    if (actions[avatarState.animation]) {
-      // Stop current animations
-      Object.values(actions).forEach(action => action?.stop());
-      
-      // Play new animation
-      const action = actions[avatarState.animation];
-      action?.reset().fadeIn(0.2).play();
-    }
+    // Stop current animations
+    Object.values(actions).forEach(action => action?.stop());
+    
+    // Play new animation
+    const action = actions[avatarState.animation];
+    action?.reset().fadeIn(0.2).play();
   }, [avatarState.animation, actions]);
 
   // Handle movement animation
@@ -87,8 +85,8 @@ export const Avatar: React.FC<AvatarProps> = ({
     const rotationDiff = targetRotation - currentRotation;
     groupRef.current.rotation.y += rotationDiff * delta * 5;
 
-    // Add floating effect for current user
-    if (isCurrentUser) {
+    // Remove floating effect for current user when in first person
+    if (isCurrentUser && !avatarState.is_first_person) {
       groupRef.current.position.y += Math.sin(state.clock.elapsedTime * 2) * 0.02;
     }
 
@@ -119,17 +117,17 @@ export const Avatar: React.FC<AvatarProps> = ({
 
   return (
     <group 
-      ref={groupRef}
       onClick={onClick}
       position={[avatarState.position.x, avatarState.position.y, avatarState.position.z]}
       rotation={[0, avatarState.rotation, 0]}
     >
-      {/* Avatar model */}
-      <primitive 
-        ref={meshRef}
-        object={scene.clone()} 
-        scale={[1, 1, 1]}
-      />
+      {/* Avatar model - hide if current user and in first person */}
+      {!(isCurrentUser && avatarState.is_first_person) && (
+        <primitive 
+          object={scene.clone()} 
+          scale={[1, 1, 1]}
+        />
+      )}
       
       {/* Glow effect for current user */}
       {isCurrentUser && (
@@ -166,14 +164,20 @@ export const Avatar: React.FC<AvatarProps> = ({
   );
 };
 
-// Dummy Avatar component - fallback/default avatar when no model is available
+// Dummy Avatar component - fallback/default avatar for first-person mode
 interface DummyAvatarProps {
   position?: [number, number, number];
   color?: string;
   name?: string;
   isCurrentUser?: boolean;
   isControllable?: boolean;
+  isFirstPerson?: boolean;
   onClick?: () => void;
+  movementState?: {
+    isMoving: boolean;
+    speed: number;
+    position: [number, number, number];
+  };
 }
 
 export const DummyAvatar: React.FC<DummyAvatarProps> = ({ 
@@ -182,158 +186,169 @@ export const DummyAvatar: React.FC<DummyAvatarProps> = ({
   name = "Player",
   isCurrentUser = false,
   isControllable = false,
-  onClick
+  isFirstPerson = false,
+  onClick,
+  movementState
 }) => {
   const avatarRef = useRef<THREE.Group>(null);
-  const [currentPosition, setCurrentPosition] = React.useState<[number, number, number]>(position);
+  const currentPosition = movementState?.position || position;
+  const isMoving = movementState?.isMoving || false;
+  const movementSpeed = movementState?.speed || 0;
 
+  // Smooth animations for position and scale changes
+  const { position: animatedPosition, scale: animatedScale } = useSpring({
+    position: currentPosition,
+    scale: isFirstPerson ? 0.15 : 0.15,
+    config: { mass: 1, tension: 280, friction: 60 }
+  });
+
+  // Animation frame for avatar floating and body animations
   useFrame((state) => {
-    if (avatarRef.current) {
-      // Gentle floating animation
-      const baseY = isControllable ? currentPosition[1] : position[1];
+    if (!isFirstPerson && avatarRef.current) {
+      // Floating animation for third person
+      const baseY = position[1];
       avatarRef.current.position.y = baseY + Math.sin(state.clock.elapsedTime * 2) * 0.1;
-      
-      // Subtle rotation for non-controllable avatars
-      if (!isControllable) {
-        avatarRef.current.rotation.y = Math.sin(state.clock.elapsedTime * 0.5) * 0.1;
-      }
+      avatarRef.current.rotation.y = Math.sin(state.clock.elapsedTime * 0.5) * 0.1;
     }
   });
 
-  // Simple movement for controllable avatars
-  React.useEffect(() => {
-    if (!isControllable) return;
+  // First person body component with movement animations
+  const FirstPersonBody = React.useMemo(() => {
+    if (!isFirstPerson) return null;
 
-    const handleKeyDown = (event: KeyboardEvent) => {
-      const speed = 0.1;
-      const newPos = [...currentPosition] as [number, number, number];
+    const walkCycle = Date.now() * 0.01 * movementSpeed;
+    const armSwing = isMoving ? Math.sin(walkCycle) * 0.3 : 0;
+    const legSwing = isMoving ? Math.sin(walkCycle) * 0.5 : 0;
 
-      switch (event.code) {
-        case 'KeyW':
-        case 'ArrowUp':
-          newPos[2] -= speed;
-          break;
-        case 'KeyS':
-        case 'ArrowDown':
-          newPos[2] += speed;
-          break;
-        case 'KeyA':
-        case 'ArrowLeft':
-          newPos[0] -= speed;
-          break;
-        case 'KeyD':
-        case 'ArrowRight':
-          newPos[0] += speed;
-          break;
-      }
+    return (
+      <group position={[0, 0, 0]} scale={1.2}>
+        {/* Arms visible in first person */}
+        <group position={[0, 0, 0.6]}>
+          {/* Left Arm - with walking animation */}
+          <group 
+            position={[-0.35, -0.1, 0]} 
+            rotation={[0.15 + armSwing, 0.25, 0.08]}
+          >
+            <mesh position={[0, 0, 0.12]} rotation={[0.25, 0, 0]}>
+              <cylinderGeometry args={[0.025, 0.035, 0.2, 8]} />
+              <meshPhysicalMaterial color="#4f46e5" roughness={0.3} metalness={0.1} />
+            </mesh>
+            <mesh position={[0, -0.04, 0.2]} rotation={[0, 0, 0.08]}>
+              <boxGeometry args={[0.05, 0.07, 0.1]} />
+              <meshPhysicalMaterial color="#fbbf24" roughness={0.4} metalness={0.0} />
+            </mesh>
+            {/* Fingers with subtle movement */}
+            {[0, 1, 2, 3].map((i) => (
+              <mesh 
+                key={`left-finger-${i}`} 
+                position={[-0.02 + (i * 0.012), -0.07, 0.26]} 
+                rotation={[0.08 + (isMoving ? Math.sin(walkCycle + i) * 0.02 : 0), 0, 0]}
+              >
+                <cylinderGeometry args={[0.005, 0.005, 0.035, 6]} />
+                <meshPhysicalMaterial color="#fbbf24" roughness={0.4} metalness={0.0} />
+              </mesh>
+            ))}
+          </group>
 
-      // Boundary checking
-      newPos[0] = Math.max(-8, Math.min(8, newPos[0]));
-      newPos[2] = Math.max(-8, Math.min(8, newPos[2]));
+          {/* Right Arm - with opposite walking animation */}
+          <group 
+            position={[0.35, -0.1, 0]} 
+            rotation={[0.15 - armSwing, -0.25, -0.08]}
+          >
+            <mesh position={[0, 0, 0.12]} rotation={[0.25, 0, 0]}>
+              <cylinderGeometry args={[0.025, 0.035, 0.2, 8]} />
+              <meshPhysicalMaterial color="#4f46e5" roughness={0.3} metalness={0.1} />
+            </mesh>
+            <mesh position={[0, -0.04, 0.2]} rotation={[0, 0, -0.08]}>
+              <boxGeometry args={[0.05, 0.07, 0.1]} />
+              <meshPhysicalMaterial color="#fbbf24" roughness={0.4} metalness={0.0} />
+            </mesh>
+            {/* Fingers with subtle movement */}
+            {[0, 1, 2, 3].map((i) => (
+              <mesh 
+                key={`right-finger-${i}`} 
+                position={[-0.02 + (i * 0.012), -0.07, 0.26]} 
+                rotation={[0.08 + (isMoving ? Math.sin(walkCycle + i + 2) * 0.02 : 0), 0, 0]}
+              >
+                <cylinderGeometry args={[0.005, 0.005, 0.035, 6]} />
+                <meshPhysicalMaterial color="#fbbf24" roughness={0.4} metalness={0.0} />
+              </mesh>
+            ))}
+          </group>
+        </group>
 
-      setCurrentPosition(newPos);
-      
-      if (avatarRef.current) {
-        avatarRef.current.position.set(newPos[0], newPos[1], newPos[2]);
-      }
-    };
+        {/* Lower body visible at bottom of view */}
+        <group position={[0, -0.4, 0.5]}>
+          <mesh position={[0, 0, 0]}>
+            <cylinderGeometry args={[0.12, 0.15, 0.2, 8]} />
+            <meshPhysicalMaterial color="#4f46e5" roughness={0.3} metalness={0.1} clearcoat={0.5} />
+          </mesh>
+          
+          {/* Left Leg - with walking animation */}
+          <group position={[-0.08, -0.2, 0]} rotation={[legSwing, 0, 0]}>
+            <mesh position={[0, -0.15, 0]}>
+              <cylinderGeometry args={[0.05, 0.06, 0.3, 6]} />
+              <meshPhysicalMaterial color="#4f46e5" roughness={0.3} metalness={0.1} />
+            </mesh>
+            <mesh position={[0, -0.32, 0.04]}>
+              <boxGeometry args={[0.08, 0.04, 0.12]} />
+              <meshPhysicalMaterial color="#654321" roughness={0.6} metalness={0.0} />
+            </mesh>
+          </group>
+          
+          {/* Right Leg - with opposite walking animation */}
+          <group position={[0.08, -0.2, 0]} rotation={[-legSwing, 0, 0]}>
+            <mesh position={[0, -0.15, 0]}>
+              <cylinderGeometry args={[0.05, 0.06, 0.3, 6]} />
+              <meshPhysicalMaterial color="#4f46e5" roughness={0.3} metalness={0.1} />
+            </mesh>
+            <mesh position={[0, -0.32, 0.04]}>
+              <boxGeometry args={[0.08, 0.04, 0.12]} />
+              <meshPhysicalMaterial color="#654321" roughness={0.6} metalness={0.0} />
+            </mesh>
+          </group>
+        </group>
+      </group>
+    );
+  }, [isFirstPerson, isMoving, movementSpeed]);
 
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [isControllable, currentPosition]);
+  if (isFirstPerson) {
+    return (
+      <animated.group position={animatedPosition} onClick={onClick} scale={animatedScale}>
+        {FirstPersonBody}
+      </animated.group>
+    );
+  }
 
   return (
-    <group 
-      ref={avatarRef} 
-      position={isControllable ? currentPosition : position} 
-      onClick={onClick}
-    >
-      {/* Avatar Body (Cylinder) */}
+    <animated.group ref={avatarRef} position={animatedPosition} onClick={onClick} scale={animatedScale}>
+      {/* Avatar Body */}
       <mesh position={[0, 0, 0]} castShadow>
         <cylinderGeometry args={[0.15, 0.2, 0.6, 8]} />
-        <meshPhysicalMaterial 
-          color={color} 
-          roughness={0.3}
-          metalness={0.1}
-          clearcoat={0.5}
-        />
+        <meshPhysicalMaterial color={color} roughness={0.3} metalness={0.1} clearcoat={0.5} />
       </mesh>
 
-      {/* Avatar Head (Sphere) */}
+      {/* Avatar Head */}
       <mesh position={[0, 0.45, 0]} castShadow>
         <sphereGeometry args={[0.12, 16, 16]} />
-        <meshPhysicalMaterial 
-          color="#fbbf24" 
-          roughness={0.4}
-          metalness={0.0}
-          clearcoat={0.3}
-        />
+        <meshPhysicalMaterial color="#fbbf24" roughness={0.4} metalness={0.0} clearcoat={0.3} />
       </mesh>
 
-      {/* Hat/Crown */}
+      {/* Hat */}
       <mesh position={[0, 0.55, 0]} castShadow>
         <coneGeometry args={[0.08, 0.15, 6]} />
-        <meshPhysicalMaterial 
-          color="#dc2626" 
-          roughness={0.2}
-          metalness={0.3}
-          clearcoat={0.7}
-        />
+        <meshPhysicalMaterial color="#dc2626" roughness={0.2} metalness={0.3} clearcoat={0.7} />
       </mesh>
 
-      {/* Left Arm */}
+      {/* Arms */}
       <mesh position={[-0.22, 0.1, 0]} rotation={[0, 0, -0.3]} castShadow>
         <cylinderGeometry args={[0.04, 0.04, 0.3, 6]} />
-        <meshPhysicalMaterial 
-          color={color} 
-          roughness={0.3}
-          metalness={0.1}
-        />
+        <meshPhysicalMaterial color={color} roughness={0.3} metalness={0.1} />
       </mesh>
 
-      {/* Right Arm */}
       <mesh position={[0.22, 0.1, 0]} rotation={[0, 0, 0.3]} castShadow>
         <cylinderGeometry args={[0.04, 0.04, 0.3, 6]} />
-        <meshPhysicalMaterial 
-          color={color} 
-          roughness={0.3}
-          metalness={0.1}
-        />
-      </mesh>
-
-      {/* Staff/Weapon */}
-      <mesh position={[0.35, 0.2, 0]} rotation={[0, 0, 0.2]} castShadow>
-        <cylinderGeometry args={[0.02, 0.02, 0.8, 6]} />
-        <meshPhysicalMaterial 
-          color="#8b5cf6" 
-          roughness={0.1}
-          metalness={0.4}
-          clearcoat={0.8}
-        />
-      </mesh>
-
-      {/* Staff Orb */}
-      <mesh position={[0.42, 0.55, 0]} castShadow>
-        <sphereGeometry args={[0.05, 12, 12]} />
-        <meshPhysicalMaterial 
-          color="#06b6d4" 
-          roughness={0.0}
-          metalness={0.0}
-          clearcoat={1.0}
-          transmission={0.5}
-          opacity={0.8}
-          transparent={true}
-        />
-      </mesh>
-
-      {/* Base/Shadow circle */}
-      <mesh position={[0, -0.35, 0]} rotation={[-Math.PI / 2, 0, 0]}>
-        <circleGeometry args={[0.25, 16]} />
-        <meshBasicMaterial 
-          color="#000000" 
-          transparent 
-          opacity={0.3} 
-        />
+        <meshPhysicalMaterial color={color} roughness={0.3} metalness={0.1} />
       </mesh>
 
       {/* Name tag */}
@@ -349,33 +364,8 @@ export const DummyAvatar: React.FC<DummyAvatarProps> = ({
         </Text>
       )}
 
-      {/* Glow effect for current user */}
-      {isCurrentUser && (
-        <mesh>
-          <sphereGeometry args={[0.4, 16, 16]} />
-          <meshBasicMaterial 
-            color="#10b981"
-            transparent 
-            opacity={0.2}
-          />
-        </mesh>
-      )}
-
-      {/* Selection indicator */}
-      {(isCurrentUser || isControllable) && (
-        <mesh position={[0, -0.35, 0]} rotation={[-Math.PI / 2, 0, 0]}>
-          <ringGeometry args={[0.3, 0.35, 32]} />
-          <meshBasicMaterial 
-            color="#10b981" 
-            transparent 
-            opacity={0.6}
-            side={THREE.DoubleSide}
-          />
-        </mesh>
-      )}
-
-      {/* Control indicator for controllable avatars */}
-      {isControllable && (
+      {/* Control indicator */}
+      {isControllable && !isFirstPerson && (
         <Text
           position={[0, 1.3, 0]}
           fontSize={0.1}
@@ -383,17 +373,11 @@ export const DummyAvatar: React.FC<DummyAvatarProps> = ({
           anchorX="center"
           anchorY="middle"
         >
-          WASD to move • TAB to switch camera
+          WASD to move • TAB to switch to first person
         </Text>
       )}
-    </group>
+    </animated.group>
   );
 };
 
-// Preload avatar models
-useGLTF.preload('/models/avatars/wizard.glb');
-useGLTF.preload('/models/avatars/knight.glb');
-useGLTF.preload('/models/avatars/dragon.glb');
-useGLTF.preload('/models/avatars/archer.glb');
-useGLTF.preload('/models/avatars/mage.glb');
-useGLTF.preload('/models/avatars/warrior.glb');
+

@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Canvas } from '@react-three/fiber';
 import { OrbitControls, Environment } from '@react-three/drei';
 import { Suspense } from 'react';
@@ -8,9 +8,37 @@ import { PlayerList } from './PlayerList';
 import { Chat } from '../Chat/Chat';
 import { Header } from '../UI/Header';
 import { useGameStore } from '../../stores/gameStore';
+import { useFirstPersonCamera } from '../../hooks/useAvatarCamera';
+import { useAvatarStore } from '../../stores/avatarStore';
+import { RapierRigidBody } from '@react-three/rapier';
 
 export function Game() {
   const { currentGame } = useGameStore();
+  const { myAvatarState, updateMyPosition, setIsFirstPerson } = useAvatarStore();
+  const avatarRigidBodyRef = useRef<RapierRigidBody>(null);
+
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.code === 'Tab') {
+        event.preventDefault();
+        setIsFirstPerson(!myAvatarState?.is_first_person);
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [myAvatarState?.is_first_person, setIsFirstPerson]);
+
+  useFirstPersonCamera(
+    avatarRigidBodyRef,
+    (moving, speed) => {
+      // You can use this to trigger avatar animations (walk, run, idle)
+      // For now, we'll just update the isMoving state in the store
+      // updateMyPosition(myAvatarState?.position, myAvatarState?.rotation, myAvatarState?.is_first_person, moving);
+    }
+  );
 
   return (
     <div className="h-screen bg-gray-900 text-white">
@@ -32,15 +60,17 @@ export function Game() {
                 castShadow
                 shadow-mapSize={[2048, 2048]}
               />
-              <OrbitControls
-                enablePan={true}
-                enableZoom={true}
-                enableRotate={true}
-                maxPolarAngle={Math.PI / 2}
-                minDistance={5}
-                maxDistance={50}
-              />
-              <Arena />
+              {!myAvatarState?.is_first_person && (
+                <OrbitControls
+                  enablePan={true}
+                  enableZoom={true}
+                  enableRotate={true}
+                  maxPolarAngle={Math.PI / 2}
+                  minDistance={5}
+                  maxDistance={50}
+                />
+              )}
+              <Arena isFirstPerson={myAvatarState?.is_first_person} avatarRigidBodyRef={avatarRigidBodyRef} />
             </Suspense>
           </Canvas>
           

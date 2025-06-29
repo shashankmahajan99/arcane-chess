@@ -4,23 +4,31 @@ import { Text } from '@react-three/drei';
 import * as THREE from 'three';
 import { useGameStore } from '../../stores/gameStore';
 import { ChessPiece } from './ChessPiece';
-import { DummyAvatar } from './Avatar';
+
 
 interface ChessBoardProps {
   position?: [number, number, number];
   rotation?: [number, number, number];
   scale?: number;
-  controlMode?: 'camera' | 'avatar';
+  controlMode?: 'camera' | 'first-person';
+  firstPersonState?: {
+    position: [number, number, number];
+    isMoving: boolean;
+    speed: number;
+  };
 }
 
 export const ChessBoard: React.FC<ChessBoardProps> = ({ 
   position = [0, 0, 0],
   rotation = [0, 0, 0],
   scale = 1,
-  controlMode = 'camera'
+  controlMode = 'camera',
+  firstPersonState
 }) => {
   const groupRef = useRef<THREE.Group>(null);
   const boardRef = useRef<THREE.Mesh>(null);
+  const defaultAvatarPosition: [number, number, number] = [3, 0.8, 3];
+  const avatarPosition = firstPersonState?.position || defaultAvatarPosition;
   
   const { 
     chessBoard, 
@@ -93,8 +101,13 @@ export const ChessBoard: React.FC<ChessBoardProps> = ({
 
   useFrame((state) => {
     if (groupRef.current) {
-      // Subtle floating animation
-      groupRef.current.position.y = position[1] + Math.sin(state.clock.elapsedTime * 0.5) * 0.02;
+      if (controlMode !== 'first-person') {
+        // Subtle floating animation - disabled in first person mode
+        groupRef.current.position.y = position[1] + Math.sin(state.clock.elapsedTime * 0.5) * 0.02;
+      } else {
+        // Keep board at fixed position in first person mode
+        groupRef.current.position.y = position[1];
+      }
     }
   });
 
@@ -116,14 +129,6 @@ export const ChessBoard: React.FC<ChessBoardProps> = ({
       
       {/* Pieces */}
       {pieces}
-      
-      {/* Dummy Avatar */}
-      <DummyAvatar 
-        position={[2, 0.8, 2]} 
-        name="Chess Master"
-        isCurrentUser={controlMode === 'avatar'}
-        isControllable={controlMode === 'avatar'}
-      />
       
       {/* Coordinate labels */}
       {/* Files (a-h) - Bottom */}
