@@ -27,6 +27,7 @@ export interface Avatar {
   created_at: string;
   updated_at: string;
   user?: User;
+  thumbnail?: string;
 }
 
 export interface Game {
@@ -100,6 +101,7 @@ export interface Vector3 {
 }
 
 export interface ChessPiece {
+  id: string;
   type: 'pawn' | 'rook' | 'knight' | 'bishop' | 'queen' | 'king';
   color: 'white' | 'black';
   position: string; // e.g., "e4"
@@ -122,7 +124,7 @@ export interface ChessBoard {
 
 export interface GameEvent {
   type: 'move' | 'chat' | 'avatar_move' | 'player_join' | 'player_leave' | 'game_end';
-  data: unknown;
+  data: any;
   timestamp: string;
   user_id?: string;
 }
@@ -143,6 +145,8 @@ export interface AvatarState {
   animation: string;
   model_type: string;
   color_scheme: string;
+  name: string;
+  accessories: string;
   is_visible: boolean;
 }
 

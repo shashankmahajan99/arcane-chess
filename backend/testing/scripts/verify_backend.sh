@@ -165,7 +165,7 @@ test_websocket_visual() {
             # Test WebSocket connection
             print_info "Testing WebSocket connection..."
             if command -v go &> /dev/null; then
-                timeout 10s go run visual_websocket_test.go ws://localhost:8080/ws || true
+                timeout 10s go run visual_websocket_simulator.go ws://localhost:8080/ws || true
                 print_status "WebSocket visual test completed"
             else
                 print_warning "Cannot run WebSocket visual test - Go not available"

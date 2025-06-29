@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { subscribeWithSelector } from 'zustand/middleware';
 import { Game, GameMove, ChessBoard, User } from '../types';
-import { Chess, Square, Move } from 'chess.js';
+import { Chess } from 'chess.js';
 
 interface GameState {
   // Current game data
@@ -107,9 +107,9 @@ export const useGameStore = create<GameState>()(
         });
       } else {
         // Select new square
-        const piece = chessEngine.get(square as Square);
+        const piece = chessEngine.get(square as any);
         if (piece && get().isPieceOwnedByCurrentPlayer(piece.color)) {
-          const moves = chessEngine.moves({ square: square as Square, verbose: true });
+          const moves = chessEngine.moves({ square: square as any, verbose: true });
           const possibleMoves = moves.map((move: any) => move.to);
           set({ selectedSquare: square, possibleMoves });
         }
@@ -220,6 +220,7 @@ export const useGameStore = create<GameState>()(
           if (piece) {
             const square = String.fromCharCode(97 + file) + (8 - rank);
             chessBoard.pieces[square] = {
+              id: `${piece.type}-${piece.color}-${square}`,
               type: piece.type as 'pawn' | 'rook' | 'knight' | 'bishop' | 'queen' | 'king',
               color: piece.color === 'w' ? 'white' : 'black',
               position: square,

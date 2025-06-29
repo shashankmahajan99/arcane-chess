@@ -3,6 +3,9 @@ import { useFrame } from '@react-three/fiber';
 import { useGLTF } from '@react-three/drei';
 import * as THREE from 'three';
 import { ChessPiece as ChessPieceType } from '../../types';
+import { LiquidGlassManager } from '../../utils/liquidGlass';
+
+const liquidGlassManager = new LiquidGlassManager();
 
 interface ChessPieceProps {
   piece: ChessPieceType;
@@ -16,6 +19,7 @@ interface ChessPieceProps {
 export const ChessPiece: React.FC<ChessPieceProps> = ({
   piece,
   position,
+  square,
   isSelected,
   onClick,
   interactive
@@ -26,17 +30,10 @@ export const ChessPiece: React.FC<ChessPieceProps> = ({
   // Load piece model
   const { scene } = useGLTF(`/models/chess/${piece.type}.glb`);
   
-  // Materials based on piece color
-  const material = useMemo(() => {
-    const baseColor = piece.color === 'white' ? '#f8fafc' : '#1e293b';
-    
-    return new THREE.MeshStandardMaterial({
-      color: baseColor,
-      metalness: 0.4,
-      roughness: 0.3,
-      envMapIntensity: 1.0,
-    });
-  }, [piece.color]);
+  // Liquid glass material for the piece
+  const liquidMaterial = useMemo(() => {
+    return liquidGlassManager.createPieceMaterial(piece.id, piece.color);
+  }, [piece.id, piece.color]);
 
   // Glow material for selection
   const glowMaterial = useMemo(() => new THREE.MeshBasicMaterial({
@@ -45,21 +42,28 @@ export const ChessPiece: React.FC<ChessPieceProps> = ({
     opacity: 0.3,
   }), [piece.color]);
 
-  // Apply materials to the model
+  // Apply liquid glass material to the model
   useEffect(() => {
     if (scene) {
       scene.traverse((child) => {
         if (child instanceof THREE.Mesh) {
-          child.material = material;
+          child.material = liquidMaterial;
           child.castShadow = true;
           child.receiveShadow = true;
         }
       });
     }
-  }, [scene, material]);
+    // Cleanup: dispose material when component unmounts
+    return () => {
+      liquidMaterial.dispose();
+    };
+  }, [scene, liquidMaterial]);
 
   useFrame((state, delta) => {
     if (!groupRef.current) return;
+
+    // Update liquid glass material uniforms
+    liquidGlassManager.update(state.clock.elapsedTime);
 
     // Smooth position interpolation
     const targetPos = new THREE.Vector3(...position);
@@ -85,12 +89,12 @@ export const ChessPiece: React.FC<ChessPieceProps> = ({
       ref={groupRef}
       position={position}
       onClick={interactive ? onClick : undefined}
-      onPointerEnter={() => {
+      onPointerEnter={(e) => {
         if (interactive) {
           document.body.style.cursor = 'pointer';
         }
       }}
-      onPointerLeave={() => {
+      onPointerLeave={(e) => {
         if (interactive) {
           document.body.style.cursor = 'default';
         }

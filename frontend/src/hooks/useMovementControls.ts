@@ -1,4 +1,4 @@
-import { useEffect, useCallback, useRef, useState } from 'react';
+import { useEffect, useCallback, useRef } from 'react';
 import { useAvatarStore } from '../stores/avatarStore';
 import { Vector3 } from '../types';
 
@@ -14,12 +14,10 @@ export const useMovementControls = (enabled: boolean = true) => {
   const { 
     myAvatarState, 
     updateMyPosition, 
+    setTargetPosition,
     playAnimation,
     movementSpeed 
   } = useAvatarStore();
-
-  const [isMoving, setIsMoving] = useState(false);
-  const [isRunning, setIsRunning] = useState(false);
 
   const movement = useRef<MovementState>({
     forward: false,
@@ -31,67 +29,53 @@ export const useMovementControls = (enabled: boolean = true) => {
 
   const handleKeyDown = useCallback((event: KeyboardEvent) => {
     if (!enabled) return;
-    const { current } = movement;
-    let changed = false;
-
     switch (event.code) {
       case 'KeyW':
       case 'ArrowUp':
-        if (!current.forward) { current.forward = true; changed = true; }
+        movement.current.forward = true;
         break;
       case 'KeyS':
       case 'ArrowDown':
-        if (!current.backward) { current.backward = true; changed = true; }
+        movement.current.backward = true;
         break;
       case 'KeyA':
       case 'ArrowLeft':
-        if (!current.left) { current.left = true; changed = true; }
+        movement.current.left = true;
         break;
       case 'KeyD':
       case 'ArrowRight':
-        if (!current.right) { current.right = true; changed = true; }
+        movement.current.right = true;
         break;
       case 'ShiftLeft':
       case 'ShiftRight':
-        if (!current.shift) { current.shift = true; changed = true; }
+        movement.current.shift = true;
         break;
-    }
-    if (changed) {
-      setIsMoving(current.forward || current.backward || current.left || current.right);
-      setIsRunning(current.shift);
     }
   }, [enabled]);
 
   const handleKeyUp = useCallback((event: KeyboardEvent) => {
     if (!enabled) return;
-    const { current } = movement;
-    let changed = false;
-
     switch (event.code) {
       case 'KeyW':
       case 'ArrowUp':
-        if (current.forward) { current.forward = false; changed = true; }
+        movement.current.forward = false;
         break;
       case 'KeyS':
       case 'ArrowDown':
-        if (current.backward) { current.backward = false; changed = true; }
+        movement.current.backward = false;
         break;
       case 'KeyA':
       case 'ArrowLeft':
-        if (current.left) { current.left = false; changed = true; }
+        movement.current.left = false;
         break;
       case 'KeyD':
       case 'ArrowRight':
-        if (current.right) { current.right = false; changed = true; }
+        movement.current.right = false;
         break;
       case 'ShiftLeft':
       case 'ShiftRight':
-        if (current.shift) { current.shift = false; changed = true; }
+        movement.current.shift = false;
         break;
-    }
-    if (changed) {
-      setIsMoving(current.forward || current.backward || current.left || current.right);
-      setIsRunning(current.shift);
     }
   }, [enabled]);
 
@@ -105,7 +89,7 @@ export const useMovementControls = (enabled: boolean = true) => {
       return;
     }
     // Calculate movement direction
-    const direction: Vector3 = { x: 0, y: 0, z: 0 };
+    let direction: Vector3 = { x: 0, y: 0, z: 0 };
     if (forward) direction.z -= 1;
     if (backward) direction.z += 1;
     if (left) direction.x -= 1;

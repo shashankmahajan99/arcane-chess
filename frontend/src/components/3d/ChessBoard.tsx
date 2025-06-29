@@ -1,20 +1,23 @@
 import React, { useRef, useMemo } from 'react';
-import * as THREE from 'three';
 import { useFrame } from '@react-three/fiber';
 import { Text } from '@react-three/drei';
+import * as THREE from 'three';
 import { useGameStore } from '../../stores/gameStore';
 import { ChessPiece } from './ChessPiece';
+import { DummyAvatar } from './Avatar';
 
 interface ChessBoardProps {
   position?: [number, number, number];
   rotation?: [number, number, number];
   scale?: number;
+  controlMode?: 'camera' | 'avatar';
 }
 
 export const ChessBoard: React.FC<ChessBoardProps> = ({ 
   position = [0, 0, 0],
   rotation = [0, 0, 0],
-  scale = 1 
+  scale = 1,
+  controlMode = 'camera'
 }) => {
   const groupRef = useRef<THREE.Group>(null);
   const boardRef = useRef<THREE.Mesh>(null);
@@ -41,7 +44,7 @@ export const ChessBoard: React.FC<ChessBoardProps> = ({
         squareElements.push(
           <Square
             key={square}
-            position={[file - 3.5, 0.01, rank - 3.5]}
+            position={[file - 3.5, 0.11, rank - 3.5]}
             isLight={isLight}
             isSelected={isSelected}
             isPossibleMove={isPossibleMove}
@@ -78,17 +81,14 @@ export const ChessBoard: React.FC<ChessBoardProps> = ({
     });
   }, [chessBoard?.pieces, selectedSquare, selectSquare, isMyTurn]);
 
-  // Board materials
-  const boardMaterial = useMemo(() => new THREE.MeshStandardMaterial({
-    color: '#8B4513',
-    roughness: 0.8,
-    metalness: 0.1,
-  }), []);
-
-  const borderMaterial = useMemo(() => new THREE.MeshStandardMaterial({
-    color: '#654321',
-    roughness: 0.6,
+  // Border material for the board frame
+  const borderMaterial = useMemo(() => new THREE.MeshPhysicalMaterial({
+    color: '#654321', // Darker brown for border
+    roughness: 0.5,
     metalness: 0.2,
+    clearcoat: 0.4,
+    clearcoatRoughness: 0.2,
+    envMapIntensity: 1.0,
   }), []);
 
   useFrame((state) => {
@@ -111,42 +111,83 @@ export const ChessBoard: React.FC<ChessBoardProps> = ({
         <primitive object={borderMaterial} />
       </mesh>
       
-      {/* Board surface */}
-      <mesh position={[0, 0.11, 0]} receiveShadow>
-        <boxGeometry args={[8, 0.02, 8]} />
-        <primitive object={boardMaterial} />
-      </mesh>
-      
-      {/* Squares */}
+      {/* Squares - positioned above the base */}
       {squares}
       
       {/* Pieces */}
       {pieces}
       
+      {/* Dummy Avatar */}
+      <DummyAvatar 
+        position={[2, 0.8, 2]} 
+        name="Chess Master"
+        isCurrentUser={controlMode === 'avatar'}
+        isControllable={controlMode === 'avatar'}
+      />
+      
       {/* Coordinate labels */}
-      {/* Files (a-h) */}
+      {/* Files (a-h) - Bottom */}
       {Array.from({ length: 8 }, (_, i) => (
         <Text
-          key={`file-${i}`}
+          key={`file-bottom-${i}`}
           position={[i - 3.5, 0.3, -4.2]}
-          fontSize={0.2}
-          color="#654321"
+          fontSize={0.3}
+          color="#ffffff"
           anchorX="center"
           anchorY="middle"
+          outlineWidth={0.02}
+          outlineColor="#000000"
         >
           {String.fromCharCode(97 + i)}
         </Text>
       ))}
       
-      {/* Ranks (1-8) */}
+      {/* Files (a-h) - Top */}
       {Array.from({ length: 8 }, (_, i) => (
         <Text
-          key={`rank-${i}`}
-          position={[-4.2, 0.3, i - 3.5]}
-          fontSize={0.2}
-          color="#654321"
+          key={`file-top-${i}`}
+          position={[i - 3.5, 0.3, 4.2]}
+          fontSize={0.3}
+          color="#ffffff"
           anchorX="center"
           anchorY="middle"
+          outlineWidth={0.02}
+          outlineColor="#000000"
+          rotation={[0, Math.PI, 0]}
+        >
+          {String.fromCharCode(97 + i)}
+        </Text>
+      ))}
+      
+      {/* Ranks (1-8) - Left */}
+      {Array.from({ length: 8 }, (_, i) => (
+        <Text
+          key={`rank-left-${i}`}
+          position={[-4.2, 0.3, i - 3.5]}
+          fontSize={0.3}
+          color="#ffffff"
+          anchorX="center"
+          anchorY="middle"
+          outlineWidth={0.02}
+          outlineColor="#000000"
+          rotation={[0, Math.PI / 2, 0]}
+        >
+          {8 - i}
+        </Text>
+      ))}
+      
+      {/* Ranks (1-8) - Right */}
+      {Array.from({ length: 8 }, (_, i) => (
+        <Text
+          key={`rank-right-${i}`}
+          position={[4.2, 0.3, i - 3.5]}
+          fontSize={0.3}
+          color="#ffffff"
+          anchorX="center"
+          anchorY="middle"
+          outlineWidth={0.02}
+          outlineColor="#000000"
+          rotation={[0, -Math.PI / 2, 0]}
         >
           {8 - i}
         </Text>
@@ -177,20 +218,21 @@ const Square: React.FC<SquareProps> = ({
   const meshRef = useRef<THREE.Mesh>(null);
   
   const material = useMemo(() => {
-    let color = isLight ? '#F0D9B5' : '#B58863';
+    let color = isLight ? '#f0d9b5' : '#b58863'; // Traditional chess board colors (light tan and dark brown)
     
     if (isSelected) {
-      color = '#7dd3fc';
+      color = '#7dd3fc'; // Light blue for selected square
     } else if (isPossibleMove) {
-      color = '#22c55e';
+      color = '#22c55e'; // Green for possible moves
     }
     
-    return new THREE.MeshStandardMaterial({
+    return new THREE.MeshPhysicalMaterial({
       color,
-      roughness: 0.8,
+      roughness: 0.3,
       metalness: 0.1,
-      transparent: isPossibleMove,
-      opacity: isPossibleMove ? 0.8 : 1.0,
+      clearcoat: 0.2,
+      clearcoatRoughness: 0.1,
+      envMapIntensity: 0.8,
     });
   }, [isLight, isSelected, isPossibleMove]);
 
@@ -205,7 +247,7 @@ const Square: React.FC<SquareProps> = ({
   return (
     <mesh
       ref={meshRef}
-      position={position}
+      position={[position[0], position[1] + 0.01, position[2]]} // Adjust Y position for elevation
       onClick={interactive ? onClick : undefined}
       onPointerEnter={(e) => {
         if (interactive) {
@@ -220,7 +262,7 @@ const Square: React.FC<SquareProps> = ({
         }
       }}
     >
-      <planeGeometry args={[0.9, 0.9]} />
+      <boxGeometry args={[0.9, 0.02, 0.9]} /> {/* Changed to boxGeometry with small height */}
       <primitive object={material} />
     </mesh>
   );

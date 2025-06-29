@@ -6,7 +6,6 @@ import (
 	"os"
 
 	"github.com/gin-gonic/gin"
-	"github.com/googollee/go-socket.io"
 	"github.com/googollee/go-socket.io/engineio"
 	"github.com/googollee/go-socket.io/engineio/transport"
 	"github.com/googollee/go-socket.io/engineio/transport/polling"
@@ -63,7 +62,7 @@ func main() {
 
 	// Set Gin to release mode to reduce logging
 	gin.SetMode(gin.ReleaseMode)
-	
+
 	router := gin.Default()
 
 	// Enable CORS
@@ -71,12 +70,12 @@ func main() {
 		c.Header("Access-Control-Allow-Origin", "*")
 		c.Header("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
 		c.Header("Access-Control-Allow-Headers", "Origin, Content-Type, Authorization")
-		
+
 		if c.Request.Method == "OPTIONS" {
 			c.AbortWithStatus(204)
 			return
 		}
-		
+
 		c.Next()
 	})
 
@@ -92,10 +91,10 @@ func main() {
 	log.Printf("Socket.IO test server starting on port %s", port)
 	log.Printf("Socket.IO endpoint: http://localhost:%s/socket.io/", port)
 	log.Printf("Health check: http://localhost:%s/health", port)
-	
+
 	go server.Serve()
 	defer server.Close()
-	
+
 	if err := router.Run(":" + port); err != nil {
 		log.Fatal("Server failed to start:", err)
 	}

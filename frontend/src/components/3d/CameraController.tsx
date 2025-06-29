@@ -4,8 +4,6 @@ import { OrbitControls } from '@react-three/drei';
 import * as THREE from 'three';
 import { useAvatarStore } from '../../stores/avatarStore';
 
-import { OrbitControls as OrbitControlsImpl } from 'three-stdlib';
-
 interface CameraControllerProps {
   followAvatar?: boolean;
   enableOrbitControls?: boolean;
@@ -17,7 +15,7 @@ export const CameraController: React.FC<CameraControllerProps> = ({
   enableOrbitControls = true,
   children
 }) => {
-  const orbitRef = useRef<OrbitControlsImpl>(null);
+  const orbitRef = useRef<any>(null);
   const { camera } = useThree();
   const { myAvatarState } = useAvatarStore();
 

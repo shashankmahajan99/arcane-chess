@@ -67,6 +67,8 @@ export const useAvatarStore = create<AvatarStoreState>()(
             animation: 'idle',
             model_type: avatar.model_type,
             color_scheme: avatar.color_scheme,
+            name: avatar.name, // Added missing property
+            accessories: avatar.accessories, // Added missing property
             is_visible: avatar.is_visible,
           }
         });

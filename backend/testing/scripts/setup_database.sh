@@ -219,7 +219,7 @@ main() {
         echo "  go run ./cmd/server"
         echo ""
         echo "🔌 To test WebSocket connection:"
-        echo "  go run visual_websocket_test.go ws://localhost:8080/ws"
+        echo "  go run visual_websocket_simulator.go ws://localhost:8080/ws"
         echo ""
         echo "🌐 To test with HTML interface:"
         echo "  open frontend_test.html"

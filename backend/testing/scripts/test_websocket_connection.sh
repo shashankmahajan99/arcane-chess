@@ -34,7 +34,7 @@ sleep 3
 echo ""
 echo "📊 Testing WebSocket connection..."
 echo "If the server started successfully, you can test with:"
-echo "  go run visual_websocket_test.go ws://localhost:8080/ws"
+echo "  go run visual_websocket_simulator.go ws://localhost:8080/ws"
 echo ""
 
 # Check if server is responsive (this will likely fail without database)
@@ -42,7 +42,7 @@ if curl -s -f http://localhost:8080/health > /dev/null 2>&1; then
     echo "✅ Server is running and responsive!"
     echo ""
     echo "🧪 Running WebSocket visual test..."
-    timeout 10s go run visual_websocket_test.go ws://localhost:8080/ws || echo "WebSocket test completed"
+    timeout 10s go run visual_websocket_simulator.go ws://localhost:8080/ws || echo "WebSocket test completed"
 else
     echo "❌ Server not responding (likely due to database connection requirement)"
     echo ""

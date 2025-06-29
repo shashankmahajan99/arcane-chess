@@ -1,4 +1,4 @@
-import React, { useRef, useMemo } from 'react';
+import React, { useRef, useMemo, useEffect } from 'react';
 import { useFrame } from '@react-three/fiber';
 import { Environment, Sky, Stars, useGLTF, Float, Sparkles } from '@react-three/drei';
 import * as THREE from 'three';
@@ -24,30 +24,63 @@ export const Arena: React.FC<ArenaProps> = ({ arena, children }) => {
     return (
       <group>
         {/* Floor */}
-        <mesh position={[0, -0.1, 0]} receiveShadow>
-          <boxGeometry args={[30, 0.2, 30]} />
-          <meshStandardMaterial color="#2d3748" />
+        <mesh position={[0, -0.5, 0]} receiveShadow>
+          <boxGeometry args={[40, 1, 40]} />
+          <meshPhysicalMaterial
+            color="#1a1a1a"
+            roughness={0.4}
+            metalness={0.8}
+            clearcoat={0.5}
+            clearcoatRoughness={0.2}
+            envMapIntensity={1.5}
+          />
         </mesh>
         
-        {/* Chess board area */}
-        <mesh position={[0, 0, 0]} receiveShadow>
-          <boxGeometry args={[8, 0.1, 8]} />
-          <meshStandardMaterial color="#1a1a1a" />
+        {/* Walls */}
+        <mesh position={[0, 10, -20]} receiveShadow>
+          <boxGeometry args={[40, 20, 1]} />
+          <meshPhysicalMaterial
+            color="#2d3748"
+            roughness={0.6}
+            metalness={0.3}
+            clearcoat={0.1}
+            clearcoatRoughness={0.05}
+            envMapIntensity={1.0}
+          />
         </mesh>
-        
-        {/* Audience stands */}
-        {[...Array(8)].map((_, i) => {
-          const angle = (i / 8) * Math.PI * 2;
-          const radius = 12;
-          const x = Math.cos(angle) * radius;
-          const z = Math.sin(angle) * radius;
-          return (
-            <mesh key={i} position={[x, 1, z]} castShadow>
-              <boxGeometry args={[2, 2, 1]} />
-              <meshStandardMaterial color="#4a5568" />
-            </mesh>
-          );
-        })}
+        <mesh position={[0, 10, 20]} receiveShadow>
+          <boxGeometry args={[40, 20, 1]} />
+          <meshPhysicalMaterial
+            color="#2d3748"
+            roughness={0.6}
+            metalness={0.3}
+            clearcoat={0.1}
+            clearcoatRoughness={0.05}
+            envMapIntensity={1.0}
+          />
+        </mesh>
+        <mesh position={[-20, 10, 0]} rotation={[0, Math.PI / 2, 0]} receiveShadow>
+          <boxGeometry args={[40, 20, 1]} />
+          <meshPhysicalMaterial
+            color="#2d3748"
+            roughness={0.6}
+            metalness={0.3}
+            clearcoat={0.1}
+            clearcoatRoughness={0.05}
+            envMapIntensity={1.0}
+          />
+        </mesh>
+        <mesh position={[20, 10, 0]} rotation={[0, Math.PI / 2, 0]} receiveShadow>
+          <boxGeometry args={[40, 20, 1]} />
+          <meshPhysicalMaterial
+            color="#2d3748"
+            roughness={0.6}
+            metalness={0.3}
+            clearcoat={0.1}
+            clearcoatRoughness={0.05}
+            envMapIntensity={1.0}
+          />
+        </mesh>
       </group>
     );
   };
@@ -110,7 +143,15 @@ export const Arena: React.FC<ArenaProps> = ({ arena, children }) => {
     return settings[arenaTheme] || settings.classic;
   }, [arenaTheme]);
 
-  
+  // Arena boundaries for avatar movement
+  const arenaBounds = useMemo(() => ({
+    minX: -15,
+    maxX: 15,
+    minZ: -15,
+    maxZ: 15,
+    centerX: 0,
+    centerZ: 0,
+  }), []);
 
   useFrame((state, delta) => {
     // Gentle arena rotation for dynamic feel
@@ -122,7 +163,7 @@ export const Arena: React.FC<ArenaProps> = ({ arena, children }) => {
   return (
     <group ref={groupRef}>
       {/* Environment and Lighting */}
-      <Environment preset="sunset" />
+      <Environment preset="warehouse" />
       <Sky
         distance={450000}
         sunPosition={[0, 1, 0]}
@@ -146,27 +187,31 @@ export const Arena: React.FC<ArenaProps> = ({ arena, children }) => {
       {/* Atmospheric Fog */}
       <fog 
         attach="fog" 
-        args={[environmentSettings.fogColor, 30, 100]} 
+        args={[environmentSettings.fogColor, 5, 100]} 
       />
 
       {/* Lighting Setup */}
       <ambientLight 
         color={environmentSettings.lightColor} 
-        intensity={environmentSettings.ambientIntensity} 
+        intensity={environmentSettings.ambientIntensity * 1.5} 
+      />
+
+      <hemisphereLight
+        args={[environmentSettings.skyColor, environmentSettings.fogColor, 0.5]} 
       />
       
       <directionalLight
-        position={[10, 20, 5]}
+        position={[15, 25, 10]} 
         color={environmentSettings.lightColor}
-        intensity={environmentSettings.directionalIntensity}
+        intensity={environmentSettings.directionalIntensity * 1.2} 
         castShadow
         shadow-mapSize-width={2048}
         shadow-mapSize-height={2048}
-        shadow-camera-far={50}
-        shadow-camera-left={-20}
-        shadow-camera-right={20}
-        shadow-camera-top={20}
-        shadow-camera-bottom={-20}
+        shadow-camera-far={70} 
+        shadow-camera-left={-30} 
+        shadow-camera-right={30} 
+        shadow-camera-top={30} 
+        shadow-camera-bottom={-30} 
       />
 
       {/* Spotlight on chess board */}
@@ -174,7 +219,7 @@ export const Arena: React.FC<ArenaProps> = ({ arena, children }) => {
         position={[0, 15, 0]}
         angle={0.3}
         penumbra={0.1}
-        intensity={1.5}
+        intensity={2.0} 
         color="#ffffff"
         castShadow
         target-position={[0, 0, 0]}
@@ -248,8 +293,11 @@ export const Arena: React.FC<ArenaProps> = ({ arena, children }) => {
 const SpectatorStands: React.FC<{ theme: ArenaTheme }> = ({ theme }) => {
   const stands = useMemo(() => {
     const standElements = [];
-    const radius = 12;
-    const segments = 8;
+    const radius = 15; // Increased radius for more space
+    const segments = 12; // More segments for smoother circle
+    const standHeight = 3;
+    const standWidth = 4;
+    const standDepth = 2;
 
     for (let i = 0; i < segments; i++) {
       const angle = (i / segments) * Math.PI * 2;
@@ -257,20 +305,32 @@ const SpectatorStands: React.FC<{ theme: ArenaTheme }> = ({ theme }) => {
       const z = Math.sin(angle) * radius;
 
       standElements.push(
-        <mesh
-          key={i}
-          position={[x, 2, z]}
-          rotation={[0, angle + Math.PI, 0]}
-          castShadow
-          receiveShadow
-        >
-          <boxGeometry args={[3, 4, 1]} />
-          <meshStandardMaterial
-            color={theme === 'mystic' ? '#4c1d95' : '#6b7280'}
-            roughness={0.7}
-            metalness={0.3}
-          />
-        </mesh>
+        <group key={i} position={[x, standHeight / 2, z]} rotation={[0, angle + Math.PI, 0]}>
+          {/* Base of the stand */}
+          <mesh castShadow receiveShadow>
+            <boxGeometry args={[standWidth, standHeight, standDepth]} />
+            <meshPhysicalMaterial
+              color={theme === 'mystic' ? '#312e81' : '#4a5568'} // Darker, more refined colors
+              roughness={0.5}
+              metalness={0.2}
+              clearcoat={0.1}
+              clearcoatRoughness={0.05}
+              envMapIntensity={0.8}
+            />
+          </mesh>
+          {/* Top platform of the stand */}
+          <mesh position={[0, standHeight / 2 + 0.1, 0]} castShadow receiveShadow>
+            <boxGeometry args={[standWidth * 0.9, 0.2, standDepth * 0.9]} />
+            <meshPhysicalMaterial
+              color={theme === 'mystic' ? '#4c1d95' : '#6b7280'} // Lighter, more refined colors
+              roughness={0.3}
+              metalness={0.4}
+              clearcoat={0.2}
+              clearcoatRoughness={0.1}
+              envMapIntensity={1.0}
+            />
+          </mesh>
+        </group>
       );
     }
 

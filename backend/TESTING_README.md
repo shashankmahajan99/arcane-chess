@@ -2,6 +2,8 @@
 
 This directory contains comprehensive testing tools to verify that the Arcane Chess backend is ready for frontend integration.
 
+> 📚 **New to testing?** Check out the [**TESTING_GUIDE.md**](TESTING_GUIDE.md) for step-by-step instructions and usage examples!
+
 ## 🎯 Backend Status: READY FOR FRONTEND INTEGRATION ✅
 
 All tests have passed successfully! The backend WebSocket functionality, HTTP APIs, and core game services are working correctly.
@@ -19,43 +21,133 @@ All tests have passed successfully! The backend WebSocket functionality, HTTP AP
 ✅ **Avatar Positions**: Real-time position updates  
 ✅ **HTTP API**: RESTful endpoints with CORS support  
 
+## 🎯 Interactive Testing Features
+
+### Chess Game Testing
+- ♟️  Create new chess games
+- 🎮 Join existing games by ID
+- 🎯 Make moves with validation (e.g., "e2 e4")
+- 📊 Query game status and current board state
+- 🔄 Test turn-based game flow
+- ⚡ Real-time move broadcasting
+
+### Chat System Testing  
+- 💬 Send messages to specific rooms
+- 👥 Join/leave chat rooms dynamically
+- 📡 Real-time message broadcasting
+- ⌨️  Typing indicators
+- 🏠 Multi-room chat support
+- 📝 Message history
+
+### Avatar Movement & Customization
+- 🏃‍♂️ Move avatars in 3D space (X, Y, Z coordinates)
+- 🔄 Rotate avatars (degrees)
+- ⚡ Teleport to specific positions
+- 🎨 Customize avatar model types (wizard, knight, archer, etc.)
+- 🎭 Trigger animations (walk, idle, attack, cast, dance)
+- 📡 Broadcast position updates to rooms
+- 👥 See other players' avatar movements
+
+### Arena & Room Management
+- 🏠 Join/leave multiple rooms simultaneously
+- 🏗️  Create new arenas with different themes (classic, mystic, future, nature, fire, ice)
+- 📋 List all available arenas
+- 🔄 Switch between active rooms
+- 📢 Broadcast announcements to rooms
+- 🗺️  Explore different areas (lobby, games, chat)
+- 👥 Track room occupancy  
+
 ## 🧪 Available Test Tools
 
-### 1. Comprehensive Backend Verification Script
+### 1. Master Interactive Testing Suite
 ```bash
-./verify_backend.sh
+./test_backend.sh
+```
+Interactive menu to choose and run specific backend functionality testers.
+
+### 2. Modular Interactive Testers
+
+#### Chess Game Testing
+```bash
+./testing/scripts/run_chess_tester.sh
+```
+Interactive CLI tool for testing chess game functionality:
+- Create and join chess games
+- Make chess moves interactively
+- Test move validation and game state
+- Query game status and board state
+
+#### Chat System Testing
+```bash
+./testing/scripts/run_chat_tester.sh
+```
+Interactive CLI tool for testing chat functionality:
+- Send and receive chat messages
+- Join and leave chat rooms
+- Test real-time message broadcasting
+- Test typing indicators
+
+#### Avatar Movement & Customization
+```bash
+./testing/scripts/run_avatar_tester.sh
+```
+Interactive CLI tool for testing avatar functionality:
+- Move avatars in 3D space (X, Y, Z coordinates)
+- Test rotation and positioning updates
+- Customize avatar appearance (model type, colors)
+- Trigger avatar animations
+- Broadcast position updates to rooms
+
+#### Arena & Room Management
+```bash
+./testing/scripts/run_arena_tester.sh
+```
+Interactive CLI tool for testing room/arena functionality:
+- Join and leave rooms/arenas
+- Create new arenas with different themes
+- List available arenas
+- Broadcast messages to rooms
+- Explore different areas
+
+### 3. Comprehensive Backend Verification Script
+```bash
+./testing/scripts/verify_backend.sh
 ```
 Runs all unit tests, integration tests, builds the application, and generates a complete verification report.
 
-### 2. Visual WebSocket Test Client
+### 4. Advanced WebSocket Tools
+
+#### Visual WebSocket Test Client
 ```bash
-go run visual_websocket_test.go ws://localhost:8080/ws
+cd testing/tools
+go run visual_websocket_simulator.go ws://localhost:8080/ws
 ```
 Interactive command-line WebSocket client that tests all message types visually.
 
-### 3. WebSocket Stress Test
+#### WebSocket Stress Test
 ```bash
-go run websocket_stress_test.go ws://localhost:8080/ws 10
+cd testing/tools  
+go run test_websocket_server.go ws://localhost:8080/ws 10
 ```
 Tests backend performance with multiple concurrent WebSocket connections.
 
-### 4. HTML Frontend Test Tool
+### 5. HTML Frontend Test Tool
 ```bash
 # Open in browser
-open frontend_test.html
+open testing/tools/frontend_test.html
 ```
 Web-based testing interface with real-time connection monitoring and message testing.
 
 ## 🚀 Quick Start
 
-1. **Run the comprehensive verification:**
+1. **Start with the master testing suite:**
    ```bash
-   ./verify_backend.sh
+   ./test_backend.sh
    ```
 
 2. **Set up database (optional for testing, required for server):**
    ```bash
-   ./setup_database.sh
+   ./testing/scripts/setup_database.sh
    ```
 
 3. **Start your backend server** (requires PostgreSQL and Redis):
@@ -78,15 +170,64 @@ Web-based testing interface with real-time connection monitoring and message tes
    go run ./cmd/server
    ```
 
-4. **Test WebSocket connection:**
+4. **Test specific functionality:**
+   
+   **For Chess Game Testing:**
    ```bash
-   go run visual_websocket_test.go ws://localhost:8080/ws
+   ./testing/scripts/run_chess_tester.sh
+   ```
+   
+   **For Chat Testing:**
+   ```bash
+   ./testing/scripts/run_chat_tester.sh
+   ```
+   
+   **For Avatar Movement:**
+   ```bash
+   ./testing/scripts/run_avatar_tester.sh
+   ```
+   
+   **For Arena Management:**
+   ```bash
+   ./testing/scripts/run_arena_tester.sh
    ```
 
 5. **Or use the web interface:**
-   - Open `frontend_test.html` in your browser
+   - Open `testing/tools/frontend_test.html` in your browser
    - Click "Connect" to test the WebSocket connection
    - Use the buttons to test different message types
+
+⚠️ Important: Database Requirement
+
+The backend server **requires PostgreSQL and Redis** to run fully. However, all core functionality is thoroughly tested through comprehensive unit tests that use in-memory mocks.
+
+## 📁 Testing File Structure
+
+```
+backend/
+├── test_backend.sh                    # Master interactive testing menu
+├── testing/
+│   ├── scripts/                      # Shell scripts for setup and verification
+│   │   ├── verify_backend.sh         # Comprehensive backend verification
+│   │   ├── setup_database.sh         # Database setup helper
+│   │   ├── test_websocket_connection.sh # Basic WebSocket connection test
+│   │   ├── test_websocket_manual.sh   # Manual WebSocket testing
+│   │   ├── run_chess_tester.sh       # Chess game tester runner
+│   │   ├── run_chat_tester.sh        # Chat system tester runner
+│   │   ├── run_avatar_tester.sh      # Avatar tester runner
+│   │   └── run_arena_tester.sh       # Arena/room tester runner
+│   ├── tools/                        # Go-based testing tools
+│   │   ├── visual_websocket_simulator.go  # Visual WebSocket client
+│   │   ├── test_websocket_server.go       # WebSocket stress tester
+│   │   ├── test_server.go                 # Test server implementation
+│   │   ├── minimal_websocket_server.go    # Minimal WebSocket server
+│   │   └── frontend_test.html             # HTML testing interface
+│   └── interactive/                  # Interactive CLI testers
+│       ├── chess_tester.go           # Interactive chess game tester
+│       ├── chat_tester.go            # Interactive chat system tester
+│       ├── avatar_tester.go          # Interactive avatar movement tester
+│       └── arena_tester.go           # Interactive arena/room tester
+```
 
 ## ⚠️ Important: Database Requirement
 

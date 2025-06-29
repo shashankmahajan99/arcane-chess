@@ -1,4 +1,4 @@
-
+import * as THREE from 'three';
 
 export class Board {
   private squares: { [key: string]: string } = {};
