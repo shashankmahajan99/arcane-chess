@@ -1,8 +1,7 @@
 import React, { useRef, useMemo } from 'react';
+import * as THREE from 'three';
 import { useFrame } from '@react-three/fiber';
 import { Text } from '@react-three/drei';
-import * as THREE from 'three';
-import { ChessPiece as ChessPieceType } from '../../types';
 import { useGameStore } from '../../stores/gameStore';
 import { ChessPiece } from './ChessPiece';
 
@@ -172,7 +171,6 @@ const Square: React.FC<SquareProps> = ({
   isLight,
   isSelected,
   isPossibleMove,
-  square,
   onClick,
   interactive
 }) => {

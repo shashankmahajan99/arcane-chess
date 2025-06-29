@@ -1,13 +1,13 @@
 import { io, Socket } from 'socket.io-client';
-import { GameEvent, AvatarState, ChatMessage } from '../types';
+import { AvatarState, ChatMessage } from '../types';
 
 export interface WebSocketEvents {
   // Game events
-  'game:move': (data: any) => void;
-  'game:update': (data: any) => void;
-  'game:end': (data: any) => void;
-  'game:player_join': (data: any) => void;
-  'game:player_leave': (data: any) => void;
+  'game:move': (data: { game_id: string; from: string; to: string; promotion?: string }) => void;
+  'game:update': (data: { game_id: string; board_state: string; current_turn: 'white' | 'black'; move_count: number; white_time: number; black_time: number; status: string }) => void;
+  'game:end': (data: { game_id: string; winner_id: string; reason: string }) => void;
+  'game:player_join': (data: { user_id: string; username: string }) => void;
+  'game:player_leave': (data: { user_id: string }) => void;
   
   // Avatar events
   'avatar:move': (data: AvatarState) => void;
@@ -95,7 +95,7 @@ class WebSocketService {
   }
 
   // Event subscription methods
-  on(event: string, callback: (...args: any[]) => void): void {
+  on(event: string, callback: (...args: unknown[]) => void): void {
     if (!this.socket) {
       console.warn('⚠️ WebSocket not connected');
       return;
@@ -109,7 +109,7 @@ class WebSocketService {
   }
 
   // Emit methods
-  emit(event: string, data?: any): void {
+  emit(event: string, data?: unknown): void {
     if (!this.socket || !this.isConnected) {
       console.warn('⚠️ WebSocket not connected, cannot emit:', event);
       return;
@@ -176,12 +176,12 @@ class WebSocketService {
 
   // Cleanup
   disconnect(): void {
-    if (this.socket) {
+    if (this.socket && this.isConnected) {
       console.log('🔌 Disconnecting WebSocket');
       this.socket.disconnect();
-      this.socket = null;
-      this.isConnected = false;
     }
+    this.socket = null;
+    this.isConnected = false;
   }
 
   // Get socket instance (for advanced usage)
@@ -249,12 +249,12 @@ export const useWebSocket = (token?: string) => {
      });
 
      // Set up chat event handlers
-     websocketService.on('chat:message', (messageData) => {
+     websocketService.on('chat:message', (messageData: ChatMessage) => {
        // Handle chat messages - could add to a chat store
        console.log('New chat message:', messageData);
      });
 
-     websocketService.on('chat:user_typing', (typingData) => {
+     websocketService.on('chat:user_typing', (typingData: { user_id: string; typing: boolean }) => {
        // Handle typing indicators
        console.log('User typing:', typingData);
      });

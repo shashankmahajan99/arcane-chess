@@ -12,9 +12,16 @@ jest.mock('../../stores/avatarStore');
 // Mock framer-motion
 jest.mock('framer-motion', () => ({
   motion: {
-    div: ({ children, ...props }: any) => <div {...props}>{children}</div>,
+    div: ({ children, ...props }: React.PropsWithChildren<any>) => {
+      const { whileHover, whileTap, ...rest } = props;
+      return <div {...rest}>{children}</div>;
+    },
+    button: ({ children, ...props }: React.PropsWithChildren<any>) => {
+      const { whileHover, whileTap, ...rest } = props;
+      return <button {...rest}>{children}</button>;
+    },
   },
-  AnimatePresence: ({ children }: any) => <>{children}</>,
+  AnimatePresence: ({ children }: React.PropsWithChildren<any>) => <>{children}</>,
 }));
 
 // Mock heroicons
@@ -29,7 +36,7 @@ jest.mock('@heroicons/react/24/outline', () => ({
 describe('PlayerList Component', () => {
   const mockCurrentUser: User = {
     id: 'current-user-123',
-    username: 'CurrentPlayer',
+    username: 'current-user-123',
     email: 'current@example.com',
     rating: 1500,
     avatar_id: 'avatar-current',
@@ -132,7 +139,7 @@ describe('PlayerList Component', () => {
       );
 
       expect(screen.getByText('Arena (3)')).toBeInTheDocument();
-      expect(screen.getByText('CurrentPlayer')).toBeInTheDocument();
+      expect(screen.getByText('current-user-123')).toBeInTheDocument();
     });
 
     it('should render game tab when current game exists', () => {
@@ -241,7 +248,7 @@ describe('PlayerList Component', () => {
 
       fireEvent.click(screen.getByText('Game (2)'));
       
-      expect(screen.getByText('CurrentPlayer')).toBeInTheDocument();
+      expect(screen.getByText('current-user-123')).toBeInTheDocument();
       expect(screen.getByText('OpponentPlayer')).toBeInTheDocument();
     });
 
@@ -256,7 +263,7 @@ describe('PlayerList Component', () => {
 
       fireEvent.click(screen.getByText('Game (2)'));
       
-      expect(screen.getByText('CurrentPlayer')).toBeInTheDocument();
+      expect(screen.getByText('current-user-123')).toBeInTheDocument();
       expect(screen.getByText('Rating: 1500')).toBeInTheDocument();
       expect(screen.getByText('10:00')).toBeInTheDocument(); // 600 seconds formatted
     });

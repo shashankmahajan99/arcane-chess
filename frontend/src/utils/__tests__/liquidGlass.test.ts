@@ -9,12 +9,23 @@ jest.mock('three', () => ({
     uniforms: params.uniforms || {},
   })),
   Color: jest.fn().mockImplementation((r, g, b) => ({ r, g, b })),
-  Vector2: jest.fn().mockImplementation((x, y) => ({ 
-    x: x || 0, 
-    y: y || 0, 
-    set: jest.fn((newX, newY) => ({ x: newX, y: newY })),
-    copy: jest.fn()
-  })),
+  Vector2: jest.fn().mockImplementation((x, y) => {
+    const vec = {
+      x: x || 0,
+      y: y || 0,
+      set: jest.fn(function(this: any, newX: number, newY: number) {
+        this.x = newX;
+        this.y = newY;
+        return this; // Important for chaining
+      }),
+      copy: jest.fn(function(this: any, other: { x: number, y: number }) {
+        this.x = other.x;
+        this.y = other.y;
+        return this;
+      })
+    };
+    return vec;
+  }),
   DoubleSide: 'DoubleSide',
   NormalBlending: 'NormalBlending',
 }));
@@ -34,7 +45,7 @@ describe('LiquidGlassShader', () => {
         reflection: 0.8,
       };
 
-      const material = LiquidGlassShader.createMaterial(options);
+      LiquidGlassShader.createMaterial(options);
 
       expect(THREE.ShaderMaterial).toHaveBeenCalledWith({
         vertexShader: expect.any(String),
@@ -66,7 +77,7 @@ describe('LiquidGlassShader', () => {
         reflection: 0.7,
       };
 
-      const material = LiquidGlassShader.createMaterial(options);
+      LiquidGlassShader.createMaterial(options);
 
       expect(THREE.ShaderMaterial).toHaveBeenCalledWith({
         vertexShader: expect.any(String),
@@ -94,7 +105,7 @@ describe('LiquidGlassShader', () => {
         color: 'white',
       };
 
-      const material = LiquidGlassShader.createMaterial(options);
+      LiquidGlassShader.createMaterial(options);
 
       const createCall = (THREE.ShaderMaterial as jest.Mock).mock.calls[0][0];
       expect(createCall.uniforms.uIntensity.value).toBe(1.0);
@@ -105,7 +116,7 @@ describe('LiquidGlassShader', () => {
 
     it('should have valid shader code structure', () => {
       const options: LiquidGlassOptions = { color: 'white' };
-      const material = LiquidGlassShader.createMaterial(options);
+      LiquidGlassShader.createMaterial(options);
 
       const createCall = (THREE.ShaderMaterial as jest.Mock).mock.calls[0][0];
       
@@ -118,7 +129,7 @@ describe('LiquidGlassShader', () => {
   });
 
   describe('Material updates', () => {
-    let mockMaterial: any;
+    let mockMaterial: THREE.ShaderMaterial;
 
     beforeEach(() => {
       mockMaterial = {

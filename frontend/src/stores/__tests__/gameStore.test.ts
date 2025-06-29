@@ -1,6 +1,6 @@
 import { useGameStore } from '../gameStore';
 import { Chess } from 'chess.js';
-import { Game, User } from '../../types';
+import { Game } from '../../types';
 
 // Mock chess.js
 jest.mock('chess.js');
@@ -96,7 +96,7 @@ describe('GameStore', () => {
   });
 
   describe('Square selection', () => {
-    let mockChessInstance: any;
+    let mockChessInstance: Chess;
 
     beforeEach(() => {
       mockChessInstance = {
@@ -212,7 +212,7 @@ describe('GameStore', () => {
   });
 
   describe('Move execution', () => {
-    let mockChessInstance: any;
+    let mockChessInstance: Chess;
 
     beforeEach(() => {
       mockChessInstance = {

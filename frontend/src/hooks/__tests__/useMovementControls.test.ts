@@ -1,7 +1,6 @@
 import { renderHook, act } from '@testing-library/react';
 import { useMovementControls } from '../useMovementControls';
 import { useAvatarStore } from '../../stores/avatarStore';
-import { Avatar, AvatarState } from '../../types';
 
 // Mock the avatar store
 jest.mock('../../stores/avatarStore');
@@ -79,7 +78,7 @@ describe('useMovementControls', () => {
   });
 
   describe('Keyboard input handling', () => {
-    it('should handle WASD key presses', () => {
+    it('should handle WASD key presses', async () => {
       mockAvatarStore.myAvatarState = mockAvatarState;
       const { result } = renderHook(() => useMovementControls(true));
       
@@ -88,20 +87,17 @@ describe('useMovementControls', () => {
         .find(call => call[0] === 'keydown')?.[1];
       
       // Simulate W key press
-      act(() => {
+      await act(async () => {
         keydownHandler(new KeyboardEvent('keydown', { code: 'KeyW' }));
-      });
-      
-      // Advance timer to trigger movement update
-      act(() => {
-        jest.advanceTimersByTime(16);
+        await jest.advanceTimersByTime(16);
       });
       
       expect(mockAvatarStore.updateMyPosition).toHaveBeenCalled();
       expect(mockAvatarStore.playAnimation).toHaveBeenCalledWith('walk');
+      expect(result.current.isMoving).toBe(true);
     });
 
-    it('should handle arrow key presses', () => {
+    it('should handle arrow key presses', async () => {
       mockAvatarStore.myAvatarState = mockAvatarState;
       const { result } = renderHook(() => useMovementControls(true));
       
@@ -109,19 +105,17 @@ describe('useMovementControls', () => {
         .find(call => call[0] === 'keydown')?.[1];
       
       // Simulate ArrowUp key press
-      act(() => {
+      await act(async () => {
         keydownHandler(new KeyboardEvent('keydown', { code: 'ArrowUp' }));
-      });
-      
-      act(() => {
-        jest.advanceTimersByTime(16);
+        await jest.advanceTimersByTime(16);
       });
       
       expect(mockAvatarStore.updateMyPosition).toHaveBeenCalled();
       expect(mockAvatarStore.playAnimation).toHaveBeenCalledWith('walk');
+      expect(result.current.isMoving).toBe(true);
     });
 
-    it('should handle shift key for running', () => {
+    it('should handle shift key for running', async () => {
       mockAvatarStore.myAvatarState = mockAvatarState;
       const { result } = renderHook(() => useMovementControls(true));
       
@@ -129,20 +123,18 @@ describe('useMovementControls', () => {
         .find(call => call[0] === 'keydown')?.[1];
       
       // Simulate W + Shift key press
-      act(() => {
+      await act(async () => {
         keydownHandler(new KeyboardEvent('keydown', { code: 'KeyW' }));
         keydownHandler(new KeyboardEvent('keydown', { code: 'ShiftLeft' }));
-      });
-      
-      act(() => {
-        jest.advanceTimersByTime(16);
+        await jest.advanceTimersByTime(16);
       });
       
       expect(mockAvatarStore.playAnimation).toHaveBeenCalledWith('run');
       expect(result.current.isRunning).toBe(true);
+      expect(result.current.isMoving).toBe(true);
     });
 
-    it('should handle key releases', () => {
+    it('should handle key releases', async () => {
       mockAvatarStore.myAvatarState = mockAvatarState;
       const { result } = renderHook(() => useMovementControls(true));
       
@@ -152,19 +144,21 @@ describe('useMovementControls', () => {
         .find(call => call[0] === 'keyup')?.[1];
       
       // Press and release W key
-      act(() => {
+      await act(async () => {
         keydownHandler(new KeyboardEvent('keydown', { code: 'KeyW' }));
       });
       
-      act(() => {
+      await act(async () => {
         keyupHandler(new KeyboardEvent('keyup', { code: 'KeyW' }));
       });
       
-      act(() => {
+      await act(async () => {
         jest.advanceTimersByTime(16);
       });
       
       expect(mockAvatarStore.playAnimation).toHaveBeenCalledWith('idle');
+      expect(result.current.isMoving).toBe(false);
+      expect(result.current.isRunning).toBe(false);
     });
 
     it('should not handle input when disabled', () => {
@@ -194,7 +188,7 @@ describe('useMovementControls', () => {
       });
       
       const lastCall = mockAvatarStore.updateMyPosition.mock.calls[0];
-      const [newPosition, rotation] = lastCall;
+      const [newPosition] = lastCall;
       
       // Forward movement should move in negative Z direction
       expect(newPosition.z).toBeLessThan(mockAvatarState.position.z);
@@ -380,17 +374,19 @@ describe('useMovementControls', () => {
       mockAvatarStore.myAvatarState = mockAvatarState;
     });
 
-    it('should play idle animation when not moving', () => {
+    it('should play idle animation when not moving', async () => {
       const { result } = renderHook(() => useMovementControls(true));
       
-      act(() => {
+      await act(async () => {
         jest.advanceTimersByTime(16);
       });
       
       expect(mockAvatarStore.playAnimation).toHaveBeenCalledWith('idle');
+      expect(result.current.isMoving).toBe(false);
+      expect(result.current.isRunning).toBe(false);
     });
 
-    it('should play walk animation when moving normally', () => {
+    it('should play walk animation when moving normally', async () => {
       const { result } = renderHook(() => useMovementControls(true));
       
       const keydownHandler = (window.addEventListener as jest.Mock).mock.calls
@@ -404,13 +400,13 @@ describe('useMovementControls', () => {
       expect(mockAvatarStore.playAnimation).toHaveBeenCalledWith('walk');
     });
 
-    it('should play run animation when shift is pressed', () => {
+    it('should play run animation when shift is pressed', async () => {
       const { result } = renderHook(() => useMovementControls(true));
       
       const keydownHandler = (window.addEventListener as jest.Mock).mock.calls
         .find(call => call[0] === 'keydown')?.[1];
       
-      act(() => {
+      await act(async () => {
         keydownHandler(new KeyboardEvent('keydown', { code: 'KeyW' }));
         keydownHandler(new KeyboardEvent('keydown', { code: 'ShiftLeft' }));
         jest.advanceTimersByTime(16);
@@ -421,7 +417,7 @@ describe('useMovementControls', () => {
   });
 
   describe('Edge cases', () => {
-    it('should handle missing avatar state gracefully', () => {
+    it('should handle missing avatar state gracefully', async () => {
       mockAvatarStore.myAvatarState = null;
       const { result } = renderHook(() => useMovementControls(true));
       
@@ -438,7 +434,7 @@ describe('useMovementControls', () => {
       expect(mockAvatarStore.playAnimation).not.toHaveBeenCalled();
     });
 
-    it('should handle rapid key presses correctly', () => {
+    it('should handle rapid key presses correctly', async () => {
       mockAvatarStore.myAvatarState = mockAvatarState;
       const { result } = renderHook(() => useMovementControls(true));
       
@@ -459,7 +455,7 @@ describe('useMovementControls', () => {
       expect(mockAvatarStore.updateMyPosition).toHaveBeenCalled();
     });
 
-    it('should update movement state at consistent intervals', () => {
+    it('should update movement state at consistent intervals', async () => {
       mockAvatarStore.myAvatarState = mockAvatarState;
       const { result } = renderHook(() => useMovementControls(true));
       

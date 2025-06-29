@@ -1,4 +1,4 @@
-import React, { useRef, useMemo, useEffect } from 'react';
+import React, { useRef, useMemo } from 'react';
 import { useFrame } from '@react-three/fiber';
 import { Environment, Sky, Stars, useGLTF, Float, Sparkles } from '@react-three/drei';
 import * as THREE from 'three';
@@ -110,15 +110,7 @@ export const Arena: React.FC<ArenaProps> = ({ arena, children }) => {
     return settings[arenaTheme] || settings.classic;
   }, [arenaTheme]);
 
-  // Arena boundaries for avatar movement
-  const arenaBounds = useMemo(() => ({
-    minX: -15,
-    maxX: 15,
-    minZ: -15,
-    maxZ: 15,
-    centerX: 0,
-    centerZ: 0,
-  }), []);
+  
 
   useFrame((state, delta) => {
     // Gentle arena rotation for dynamic feel

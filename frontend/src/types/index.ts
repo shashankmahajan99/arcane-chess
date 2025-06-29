@@ -122,7 +122,7 @@ export interface ChessBoard {
 
 export interface GameEvent {
   type: 'move' | 'chat' | 'avatar_move' | 'player_join' | 'player_leave' | 'game_end';
-  data: any;
+  data: unknown;
   timestamp: string;
   user_id?: string;
 }

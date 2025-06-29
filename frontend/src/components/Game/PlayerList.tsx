@@ -1,11 +1,11 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
-  UserIcon,
+  
   StarIcon,
   EyeIcon,
   ChatBubbleLeftIcon,
-  ExclamationTriangleIcon
+  
 } from '@heroicons/react/24/outline';
 import { AvatarState, Game, User } from '../../types';
 import { useGameStore } from '../../stores/gameStore';
@@ -50,11 +50,7 @@ export const PlayerList: React.FC<PlayerListProps> = ({
   // Combine current user with other players
   const allPlayers = myAvatarState ? [myAvatarState, ...players] : players;
 
-  // Get game participants
-  const gameParticipants = currentGame ? [
-    currentGame.white_player,
-    currentGame.black_player
-  ].filter(Boolean) : [];
+  
 
 
   const handlePlayerAction = (playerId: string, action: 'challenge' | 'spectate' | 'message' | 'report') => {

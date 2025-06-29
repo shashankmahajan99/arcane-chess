@@ -1,0 +1,19 @@
+{
+  "name": "Arcane Chess",
+  "short_name": "Arcane Chess",
+  "description": "The ultimate open-world chess experience with 3D avatars, magical arenas, and real-time multiplayer gameplay.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0f0f23",
+  "theme_color": "#8b5cf6",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml"
+    }
+  ],
+  "categories": ["games", "entertainment"],
+  "lang": "en-US"
+}

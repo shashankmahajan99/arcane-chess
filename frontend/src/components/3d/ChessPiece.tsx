@@ -16,7 +16,6 @@ interface ChessPieceProps {
 export const ChessPiece: React.FC<ChessPieceProps> = ({
   piece,
   position,
-  square,
   isSelected,
   onClick,
   interactive
@@ -30,7 +29,6 @@ export const ChessPiece: React.FC<ChessPieceProps> = ({
   // Materials based on piece color
   const material = useMemo(() => {
     const baseColor = piece.color === 'white' ? '#f8fafc' : '#1e293b';
-    const accentColor = piece.color === 'white' ? '#e2e8f0' : '#0f172a';
     
     return new THREE.MeshStandardMaterial({
       color: baseColor,
@@ -87,12 +85,12 @@ export const ChessPiece: React.FC<ChessPieceProps> = ({
       ref={groupRef}
       position={position}
       onClick={interactive ? onClick : undefined}
-      onPointerEnter={(e) => {
+      onPointerEnter={() => {
         if (interactive) {
           document.body.style.cursor = 'pointer';
         }
       }}
-      onPointerLeave={(e) => {
+      onPointerLeave={() => {
         if (interactive) {
           document.body.style.cursor = 'default';
         }
