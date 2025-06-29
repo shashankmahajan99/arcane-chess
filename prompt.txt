@@ -1,0 +1,103 @@
+Browser-Based Arcane Chess Game: Open World + Classic Chess Hybrid (React + Go + Three.js)
+
+Modern web technologies enable a sophisticated 3D multiplayer chess experience that blends classic chess with open-world, avatar-driven exploration. This guide provides technical implementation strategies using React, Go, and Three.js, covering all aspects from 3D rendering to scalable multiplayer architecture.
+
+---
+
+## LLM-Driven Autonomous Development (Browser-Based)
+
+This project is developed by a team of Large Language Models (LLMs) acting as an autonomous, organized software organization. LLMs will:
+- Collaborate as distinct roles (System Architect, Product Owner, Senior Developer, Security Analyst, QA Engineer)
+- Plan, design, and review all features and architecture
+- Propose all file changes (creations, updates, deletions) with explicit file paths, code blocks, and reasons
+- Request the latest file contents or project state before making recommendations
+- Guide the user to apply changes and confirm updates, maintaining a feedback loop
+- Document all significant changes and decisions
+
+The user will apply all file changes as instructed by the LLMs, ensuring the project evolves incrementally and securely.
+
+---
+
+## Technical Architecture Overview
+
+**Stack:**
+- React + React Three Fiber (R3F) for 3D UI and avatar movement
+- Go backend for multiplayer, chess logic, and real-time state
+- WebSocket for low-latency, bi-directional communication
+- PostgreSQL and Redis for persistence and real-time features
+
+---
+
+## Open World Chess Arena & Avatar System
+
+**3D Arena & Free Movement**
+- The chessboard is placed in a 3D “stadium” or “arena” surrounded by an audience and interactive environment.
+- Each player controls a customizable 3D avatar (arcane, fantasy character, etc.) that can freely move around the arena using WASD/joystick controls and camera movement.
+- Players can spectate, socialize, and interact with the environment while waiting for their turn.
+
+**Chess Interaction Modes**
+- Command Mode: Players can select and move chess pieces using a classic UI or by clicking on pieces from any camera angle.
+- Possession Mode: Players may “opt in” to become a chess piece. Their avatar transforms into the selected piece and can only move according to chess rules until the move is made.
+- Players can switch between free movement and possession mode seamlessly.
+
+**Social & Spectator Features**
+- Multiple users (players and spectators) can move around the arena in real time.
+- In-game chat, emotes, and audience reactions.
+- Optional: mini-games or social spaces outside the main board.
+
+**3D Implementation**
+- Third-person (or first-person) character controller for avatars.
+- Camera controls for free exploration and focused chess play.
+- Real-time synchronization of avatar positions and actions using WebSocket or WebRTC.
+- Chess pieces and avatars use advanced shaders (liquid glass, magical effects).
+- Environmental lighting, audience animation, and interactive objects.
+
+---
+
+## Real-Time Multiplayer Architecture
+- Go backend manages both chess game state and avatar positions.
+- Efficient broadcasting of avatar movement and actions to all connected clients in the arena.
+- Chess moves are validated server-side; avatar movement is client-authoritative but monitored for anti-cheat.
+- Redis pub/sub for scalable real-time updates.
+
+---
+
+## Gameplay Flow
+- **Lobby & Matchmaking:** Players join a stadium, move their avatars, and interact while waiting for a match.
+- **Game Start:** Players can walk around, spectate, or approach the board.
+- **Move Phase:**
+  - Command Mode: Select and move pieces via UI or direct interaction.
+  - Possession Mode: Transform into a piece and move as that piece (limited to legal moves).
+- **Between Moves:** Players can freely explore, chat, or watch the game from any angle.
+- **Endgame:** Dramatic effects for checkmate, victory, and audience reactions.
+
+---
+
+## Core Features
+- Real-time multiplayer chess with open-world avatar movement.
+- AI-generated avatars and customizable skins.
+- Spectator mode and social interaction in the arena.
+- Classic chess rules, with optional “possess piece” gameplay.
+- Achievements, leaderboards, and progression.
+- PWA support for desktop and mobile.
+
+---
+
+## Monetization & Community
+- Cosmetic upgrades for avatars, pieces, and environments.
+- Tournament entry fees, premium social features, and marketplace for customizations.
+- Community moderation and social tools.
+
+---
+
+## Technical Targets
+- 60 FPS 3D rendering, sub-50ms move latency, scalable to thousands of concurrent users per arena.
+- TypeScript throughout, with shared types between frontend and backend.
+- Comprehensive testing and CI/CD.
+
+---
+
+## Prompt for LLM Team
+
+"You are a team of LLMs tasked with creating a browser-based Arcane Chess game using React, Go, and Three.js. Players can freely move their avatars around a 3D stadium, interact socially, and play chess by either commanding pieces or possessing them. The system must support real-time multiplayer, avatar customization, and a seamless blend of open-world exploration with classic chess gameplay. All core features, backend logic, and 3D systems should be production-ready, scalable, and test-covered. Propose all file changes explicitly, request context as needed, and guide the user through each step of the development process."
+
