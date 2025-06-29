@@ -17,17 +17,19 @@ type Handler struct {
 	avatarService    *services.AvatarService
 	websocketManager *services.WebSocketManager
 	upgrader         websocket.Upgrader
+	jwtSecret        string
 }
 
-func NewHandler(gameService *services.GameService, userService *services.UserService, avatarService *services.AvatarService) *Handler {
+func NewHandler(gameService *services.GameService, userService *services.UserService, avatarService *services.AvatarService, jwtSecret string) *Handler {
 	return &Handler{
 		gameService:      gameService,
 		userService:      userService,
 		avatarService:    avatarService,
 		websocketManager: services.NewWebSocketManager(),
+		jwtSecret:        jwtSecret,
 		upgrader: websocket.Upgrader{
 			CheckOrigin: func(r *http.Request) bool {
-				return true // Configure properly for production
+				return true // TODO: Configure properly for production
 			},
 		},
 	}
@@ -113,7 +115,7 @@ func (h *Handler) AuthMiddleware() gin.HandlerFunc {
 		}
 		
 		tokenString := authHeader[7:]
-		claims, err := auth.ValidateToken(tokenString)
+		claims, err := auth.ValidateToken(tokenString, h.jwtSecret)
 		if err != nil {
 			c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid or expired token"})
 			c.Abort()
@@ -147,7 +149,7 @@ func (h *Handler) Login(c *gin.Context) {
 		return
 	}
 
-	token, err := auth.GenerateToken(user.ID.String(), user.Username, user.Email)
+	token, err := auth.GenerateToken(user.ID.String(), user.Username, user.Email, h.jwtSecret)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to generate token"})
 		return
@@ -183,7 +185,7 @@ func (h *Handler) Register(c *gin.Context) {
 		return
 	}
 
-	token, err := auth.GenerateToken(user.ID.String(), user.Username, user.Email)
+	token, err := auth.GenerateToken(user.ID.String(), user.Username, user.Email, h.jwtSecret)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to generate token"})
 		return
@@ -216,7 +218,7 @@ func (h *Handler) RefreshToken(c *gin.Context) {
 	}
 	
 	tokenString := authHeader[7:]
-	newToken, err := auth.RefreshToken(tokenString)
+	newToken, err := auth.RefreshToken(tokenString, h.jwtSecret)
 	if err != nil {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid or expired token"})
 		return

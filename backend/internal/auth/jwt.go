@@ -6,7 +6,7 @@ import (
 	"github.com/golang-jwt/jwt/v5"
 )
 
-var jwtKey = []byte("your-256-bit-secret-key-for-arcane-chess-app") // In production, use environment variable
+// JWT key is loaded from configuration - no hardcoded keys
 
 type Claims struct {
 	UserID   string `json:"user_id"`
@@ -15,7 +15,11 @@ type Claims struct {
 	jwt.RegisteredClaims
 }
 
-func GenerateToken(userID, username, email string) (string, error) {
+func GenerateToken(userID, username, email, jwtSecret string) (string, error) {
+	if jwtSecret == "" {
+		return "", errors.New("JWT secret is required")
+	}
+	jwtKey := []byte(jwtSecret)
 	expirationTime := time.Now().Add(24 * time.Hour)
 	claims := &Claims{
 		UserID:   userID,
@@ -32,7 +36,11 @@ func GenerateToken(userID, username, email string) (string, error) {
 	return token.SignedString(jwtKey)
 }
 
-func ValidateToken(tokenString string) (*Claims, error) {
+func ValidateToken(tokenString, jwtSecret string) (*Claims, error) {
+	if jwtSecret == "" {
+		return nil, errors.New("JWT secret is required")
+	}
+	jwtKey := []byte(jwtSecret)
 	claims := &Claims{}
 	token, err := jwt.ParseWithClaims(tokenString, claims, func(token *jwt.Token) (interface{}, error) {
 		return jwtKey, nil
@@ -49,8 +57,8 @@ func ValidateToken(tokenString string) (*Claims, error) {
 	return claims, nil
 }
 
-func RefreshToken(tokenString string) (string, error) {
-	claims, err := ValidateToken(tokenString)
+func RefreshToken(tokenString, jwtSecret string) (string, error) {
+	claims, err := ValidateToken(tokenString, jwtSecret)
 	if err != nil {
 		return "", err
 	}
@@ -60,5 +68,5 @@ func RefreshToken(tokenString string) (string, error) {
 		return "", errors.New("token doesn't need refresh yet")
 	}
 
-	return GenerateToken(claims.UserID, claims.Username, claims.Email)
+	return GenerateToken(claims.UserID, claims.Username, claims.Email, jwtSecret)
 }

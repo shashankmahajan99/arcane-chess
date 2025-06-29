@@ -1,6 +1,7 @@
 package config
 
 import (
+	"fmt"
 	"os"
 	"strconv"
 )
@@ -60,8 +61,17 @@ func Load() (*Config, error) {
 			DB:       getEnvInt("REDIS_DB", 0),
 		},
 		JWT: JWTConfig{
-			Secret: getEnv("JWT_SECRET", "your-secret-key"),
+			Secret: getEnv("JWT_SECRET", ""),
 		},
+	}
+
+	// Validate required configuration
+	if cfg.JWT.Secret == "" {
+		return nil, fmt.Errorf("JWT_SECRET environment variable is required")
+	}
+	
+	if len(cfg.JWT.Secret) < 32 {
+		return nil, fmt.Errorf("JWT_SECRET must be at least 32 characters long")
 	}
 
 	return cfg, nil

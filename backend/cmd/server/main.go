@@ -42,7 +42,7 @@ func main() {
 	avatarService := services.NewAvatarService(db, redis)
 
 	// Initialize handlers
-	handler := handlers.NewHandler(gameService, userService, avatarService)
+	handler := handlers.NewHandler(gameService, userService, avatarService, cfg.JWT.Secret)
 
 	// Setup Gin
 	if cfg.Server.Environment == "production" {
