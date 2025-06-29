@@ -6,76 +6,60 @@ import (
 	"os"
 
 	"github.com/gin-gonic/gin"
-	"github.com/gorilla/websocket"
+	"github.com/googollee/go-socket.io"
+	"github.com/googollee/go-socket.io/engineio"
+	"github.com/googollee/go-socket.io/engineio/transport"
+	"github.com/googollee/go-socket.io/engineio/transport/polling"
+	"github.com/googollee/go-socket.io/engineio/transport/websocket"
 )
-
-var upgrader = websocket.Upgrader{
-	CheckOrigin: func(r *http.Request) bool {
-		return true // Allow all origins for testing
-	},
-}
-
-type TestMessage struct {
-	Type string      `json:"type"`
-	Data interface{} `json:"data"`
-}
-
-func handleWebSocket(c *gin.Context) {
-	conn, err := upgrader.Upgrade(c.Writer, c.Request, nil)
-	if err != nil {
-		log.Printf("WebSocket upgrade error: %v", err)
-		return
-	}
-	defer conn.Close()
-
-	log.Printf("WebSocket connection established from %s", conn.RemoteAddr())
-
-	// Send initial connection confirmation
-	welcomeMsg := TestMessage{
-		Type: "connection",
-		Data: map[string]string{"status": "connected", "message": "Welcome to Arcane Chess Test Server"},
-	}
-	if err := conn.WriteJSON(welcomeMsg); err != nil {
-		log.Printf("Error sending welcome message: %v", err)
-		return
-	}
-
-	// Handle incoming messages
-	for {
-		var msg TestMessage
-		err := conn.ReadJSON(&msg)
-		if err != nil {
-			if websocket.IsUnexpectedCloseError(err, websocket.CloseGoingAway, websocket.CloseAbnormalClosure) {
-				log.Printf("WebSocket error: %v", err)
-			}
-			break
-		}
-
-		log.Printf("Received message: %+v", msg)
-
-		// Echo the message back for testing
-		response := TestMessage{
-			Type: "echo",
-			Data: map[string]interface{}{
-				"original": msg,
-				"timestamp": "now",
-			},
-		}
-
-		if err := conn.WriteJSON(response); err != nil {
-			log.Printf("Error sending response: %v", err)
-			break
-		}
-	}
-
-	log.Printf("WebSocket connection closed for %s", conn.RemoteAddr())
-}
 
 func main() {
 	port := "8080"
 	if len(os.Args) > 1 {
 		port = os.Args[1]
 	}
+
+	// Create Socket.IO server
+	allowOriginFunc := func(r *http.Request) bool {
+		return true
+	}
+
+	server := socketio.NewServer(&engineio.Options{
+		Transports: []transport.Transport{
+			&polling.Transport{
+				CheckOrigin: allowOriginFunc,
+			},
+			&websocket.Transport{
+				CheckOrigin: allowOriginFunc,
+			},
+		},
+	})
+
+	server.OnConnect("/", func(s socketio.Conn) error {
+		s.SetContext("")
+		log.Printf("Socket.IO connection established: %s", s.ID())
+		return nil
+	})
+
+	server.OnEvent("/", "chat:message", func(s socketio.Conn, msg string) {
+		log.Printf("Received chat message from %s: %s", s.ID(), msg)
+		// Echo the message back to all clients
+		server.BroadcastToRoom("/", "", "chat:message", map[string]interface{}{
+			"user":      "Server",
+			"message":   "Echo: " + msg,
+			"timestamp": "now",
+		})
+	})
+
+	server.OnEvent("/", "game:move", func(s socketio.Conn, move map[string]interface{}) {
+		log.Printf("Received game move from %s: %+v", s.ID(), move)
+		// Echo the move back
+		server.BroadcastToRoom("/", "", "game:move", move)
+	})
+
+	server.OnDisconnect("/", func(s socketio.Conn, reason string) {
+		log.Printf("Socket.IO connection disconnected: %s, reason: %s", s.ID(), reason)
+	})
 
 	// Set Gin to release mode to reduce logging
 	gin.SetMode(gin.ReleaseMode)
@@ -98,15 +82,19 @@ func main() {
 
 	// Health check endpoint
 	router.GET("/health", func(c *gin.Context) {
-		c.JSON(200, gin.H{"status": "ok", "service": "arcane-chess-test-server"})
+		c.JSON(200, gin.H{"status": "ok", "service": "arcane-chess-socketio-test-server"})
 	})
 
-	// WebSocket endpoint
-	router.GET("/ws", handleWebSocket)
+	// Socket.IO endpoint
+	router.GET("/socket.io/*any", gin.WrapH(server))
+	router.POST("/socket.io/*any", gin.WrapH(server))
 
-	log.Printf("Test WebSocket server starting on port %s", port)
-	log.Printf("WebSocket endpoint: ws://localhost:%s/ws", port)
+	log.Printf("Socket.IO test server starting on port %s", port)
+	log.Printf("Socket.IO endpoint: http://localhost:%s/socket.io/", port)
 	log.Printf("Health check: http://localhost:%s/health", port)
+	
+	go server.Serve()
+	defer server.Close()
 	
 	if err := router.Run(":" + port); err != nil {
 		log.Fatal("Server failed to start:", err)
