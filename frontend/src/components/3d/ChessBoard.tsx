@@ -11,24 +11,16 @@ interface ChessBoardProps {
   rotation?: [number, number, number];
   scale?: number;
   controlMode?: 'camera' | 'first-person';
-  firstPersonState?: {
-    position: [number, number, number];
-    isMoving: boolean;
-    speed: number;
-  };
 }
 
 export const ChessBoard: React.FC<ChessBoardProps> = ({ 
   position = [0, 0, 0],
   rotation = [0, 0, 0],
   scale = 1,
-  controlMode = 'camera',
-  firstPersonState
+  controlMode = 'camera'
 }) => {
   const groupRef = useRef<THREE.Group>(null);
   const boardRef = useRef<THREE.Mesh>(null);
-  const defaultAvatarPosition: [number, number, number] = [3, 0.8, 3];
-  const avatarPosition = firstPersonState?.position || defaultAvatarPosition;
   
   const { 
     chessBoard, 
@@ -74,7 +66,7 @@ export const ChessBoard: React.FC<ChessBoardProps> = ({
     return Object.entries(chessBoard.pieces).map(([square, piece]) => {
       const file = square.charCodeAt(0) - 97;
       const rank = 8 - parseInt(square[1]);
-      
+      console.log('Rendering piece:', piece, 'at square:', square); // Debug log
       return (
         <ChessPiece
           key={square}
@@ -223,7 +215,7 @@ const Square: React.FC<SquareProps> = ({
   const meshRef = useRef<THREE.Mesh>(null);
   
   const material = useMemo(() => {
-    let color = isLight ? '#f0d9b5' : '#b58863'; // Traditional chess board colors (light tan and dark brown)
+    let color = isLight ? '#ffffff' : '#000000'; // Classic white and black chess board colors
     
     if (isSelected) {
       color = '#7dd3fc'; // Light blue for selected square

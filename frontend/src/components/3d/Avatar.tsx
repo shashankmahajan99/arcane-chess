@@ -1,7 +1,6 @@
 import React, { useRef, useMemo, useEffect } from 'react';
 import { useFrame } from '@react-three/fiber';
 import { useGLTF, useAnimations, Text } from '@react-three/drei';
-import { useSpring, animated } from '@react-spring/three';
 import * as THREE from 'three';
 import { AvatarState } from '../../types';
 
@@ -182,7 +181,6 @@ interface DummyAvatarProps {
 
 export const DummyAvatar: React.FC<DummyAvatarProps> = ({ 
   position = [0, 0, 0],
-  color = "#4f46e5",
   name = "Player",
   isCurrentUser = false,
   isControllable = false,
@@ -195,12 +193,9 @@ export const DummyAvatar: React.FC<DummyAvatarProps> = ({
   const isMoving = movementState?.isMoving || false;
   const movementSpeed = movementState?.speed || 0;
 
-  // Smooth animations for position and scale changes
-  const { position: animatedPosition, scale: animatedScale } = useSpring({
-    position: currentPosition,
-    scale: isFirstPerson ? 0.15 : 0.15,
-    config: { mass: 1, tension: 280, friction: 60 }
-  });
+  // Animation calculations for first person arms
+  const walkCycle = Date.now() * 0.01 * (movementSpeed + 1);
+  const armSwing = isMoving ? Math.sin(walkCycle) * 0.3 : 0;
 
   // Animation frame for avatar floating and body animations
   useFrame((state) => {
@@ -212,143 +207,132 @@ export const DummyAvatar: React.FC<DummyAvatarProps> = ({
     }
   });
 
-  // First person body component with movement animations
-  const FirstPersonBody = React.useMemo(() => {
-    if (!isFirstPerson) return null;
-
-    const walkCycle = Date.now() * 0.01 * movementSpeed;
-    const armSwing = isMoving ? Math.sin(walkCycle) * 0.3 : 0;
-    const legSwing = isMoving ? Math.sin(walkCycle) * 0.5 : 0;
-
-    return (
-      <group position={[0, 0, 0]} scale={1.2}>
-        {/* Arms visible in first person */}
-        <group position={[0, 0, 0.6]}>
-          {/* Left Arm - with walking animation */}
-          <group 
-            position={[-0.35, -0.1, 0]} 
-            rotation={[0.15 + armSwing, 0.25, 0.08]}
-          >
-            <mesh position={[0, 0, 0.12]} rotation={[0.25, 0, 0]}>
-              <cylinderGeometry args={[0.025, 0.035, 0.2, 8]} />
-              <meshPhysicalMaterial color="#4f46e5" roughness={0.3} metalness={0.1} />
-            </mesh>
-            <mesh position={[0, -0.04, 0.2]} rotation={[0, 0, 0.08]}>
-              <boxGeometry args={[0.05, 0.07, 0.1]} />
-              <meshPhysicalMaterial color="#fbbf24" roughness={0.4} metalness={0.0} />
-            </mesh>
-            {/* Fingers with subtle movement */}
-            {[0, 1, 2, 3].map((i) => (
-              <mesh 
-                key={`left-finger-${i}`} 
-                position={[-0.02 + (i * 0.012), -0.07, 0.26]} 
-                rotation={[0.08 + (isMoving ? Math.sin(walkCycle + i) * 0.02 : 0), 0, 0]}
-              >
-                <cylinderGeometry args={[0.005, 0.005, 0.035, 6]} />
-                <meshPhysicalMaterial color="#fbbf24" roughness={0.4} metalness={0.0} />
-              </mesh>
-            ))}
-          </group>
-
-          {/* Right Arm - with opposite walking animation */}
-          <group 
-            position={[0.35, -0.1, 0]} 
-            rotation={[0.15 - armSwing, -0.25, -0.08]}
-          >
-            <mesh position={[0, 0, 0.12]} rotation={[0.25, 0, 0]}>
-              <cylinderGeometry args={[0.025, 0.035, 0.2, 8]} />
-              <meshPhysicalMaterial color="#4f46e5" roughness={0.3} metalness={0.1} />
-            </mesh>
-            <mesh position={[0, -0.04, 0.2]} rotation={[0, 0, -0.08]}>
-              <boxGeometry args={[0.05, 0.07, 0.1]} />
-              <meshPhysicalMaterial color="#fbbf24" roughness={0.4} metalness={0.0} />
-            </mesh>
-            {/* Fingers with subtle movement */}
-            {[0, 1, 2, 3].map((i) => (
-              <mesh 
-                key={`right-finger-${i}`} 
-                position={[-0.02 + (i * 0.012), -0.07, 0.26]} 
-                rotation={[0.08 + (isMoving ? Math.sin(walkCycle + i + 2) * 0.02 : 0), 0, 0]}
-              >
-                <cylinderGeometry args={[0.005, 0.005, 0.035, 6]} />
-                <meshPhysicalMaterial color="#fbbf24" roughness={0.4} metalness={0.0} />
-              </mesh>
-            ))}
-          </group>
-        </group>
-
-        {/* Lower body visible at bottom of view */}
-        <group position={[0, -0.4, 0.5]}>
-          <mesh position={[0, 0, 0]}>
-            <cylinderGeometry args={[0.12, 0.15, 0.2, 8]} />
-            <meshPhysicalMaterial color="#4f46e5" roughness={0.3} metalness={0.1} clearcoat={0.5} />
-          </mesh>
-          
-          {/* Left Leg - with walking animation */}
-          <group position={[-0.08, -0.2, 0]} rotation={[legSwing, 0, 0]}>
-            <mesh position={[0, -0.15, 0]}>
-              <cylinderGeometry args={[0.05, 0.06, 0.3, 6]} />
-              <meshPhysicalMaterial color="#4f46e5" roughness={0.3} metalness={0.1} />
-            </mesh>
-            <mesh position={[0, -0.32, 0.04]}>
-              <boxGeometry args={[0.08, 0.04, 0.12]} />
-              <meshPhysicalMaterial color="#654321" roughness={0.6} metalness={0.0} />
-            </mesh>
-          </group>
-          
-          {/* Right Leg - with opposite walking animation */}
-          <group position={[0.08, -0.2, 0]} rotation={[-legSwing, 0, 0]}>
-            <mesh position={[0, -0.15, 0]}>
-              <cylinderGeometry args={[0.05, 0.06, 0.3, 6]} />
-              <meshPhysicalMaterial color="#4f46e5" roughness={0.3} metalness={0.1} />
-            </mesh>
-            <mesh position={[0, -0.32, 0.04]}>
-              <boxGeometry args={[0.08, 0.04, 0.12]} />
-              <meshPhysicalMaterial color="#654321" roughness={0.6} metalness={0.0} />
-            </mesh>
-          </group>
-        </group>
-      </group>
-    );
-  }, [isFirstPerson, isMoving, movementSpeed]);
-
   if (isFirstPerson) {
     return (
-      <animated.group position={animatedPosition} onClick={onClick} scale={animatedScale}>
-        {FirstPersonBody}
-      </animated.group>
+      <group position={currentPosition} onClick={onClick} scale={0.15}>
+        {/* First person view - only show arms/hands in front of camera */}
+        <group position={[0, 2.5, 0.8]} scale={1.5}>
+          {/* First Person Arms/Hands - positioned relative to camera */}
+          <group position={[0, 0, 0]}>
+            {/* Left Arm */}
+            <group 
+              position={[-0.35, -0.2, 0]} 
+              rotation={[0.15 + armSwing, 0.25, 0.08]}
+            >
+              <mesh position={[0, 0, 0.12]} rotation={[0.25, 0, 0]}>
+                <cylinderGeometry args={[0.025, 0.035, 0.2, 8]} />
+                <meshPhysicalMaterial color="#8b5a3c" roughness={0.3} metalness={0.1} />
+              </mesh>
+              <mesh position={[0, -0.04, 0.2]} rotation={[0, 0, 0.08]}>
+                <boxGeometry args={[0.05, 0.07, 0.1]} />
+                <meshPhysicalMaterial color="#fbbf24" roughness={0.4} metalness={0.0} />
+              </mesh>
+              {/* Fingers */}
+              {[0, 1, 2, 3].map((i) => (
+                <mesh 
+                  key={`left-finger-${i}`} 
+                  position={[-0.02 + (i * 0.012), -0.07, 0.26]} 
+                  rotation={[0.08 + (isMoving ? Math.sin(walkCycle + i) * 0.02 : 0), 0, 0]}
+                >
+                  <cylinderGeometry args={[0.005, 0.005, 0.035, 6]} />
+                  <meshPhysicalMaterial color="#fbbf24" roughness={0.4} metalness={0.0} />
+                </mesh>
+              ))}
+            </group>
+
+            {/* Right Arm */}
+            <group 
+              position={[0.35, -0.2, 0]} 
+              rotation={[0.15 - armSwing, -0.25, -0.08]}
+            >
+              <mesh position={[0, 0, 0.12]} rotation={[0.25, 0, 0]}>
+                <cylinderGeometry args={[0.025, 0.035, 0.2, 8]} />
+                <meshPhysicalMaterial color="#8b5a3c" roughness={0.3} metalness={0.1} />
+              </mesh>
+              <mesh position={[0, -0.04, 0.2]} rotation={[0, 0, -0.08]}>
+                <boxGeometry args={[0.05, 0.07, 0.1]} />
+                <meshPhysicalMaterial color="#fbbf24" roughness={0.4} metalness={0.0} />
+              </mesh>
+              {/* Fingers */}
+              {[0, 1, 2, 3].map((i) => (
+                <mesh 
+                  key={`right-finger-${i}`} 
+                  position={[-0.02 + (i * 0.012), -0.07, 0.26]} 
+                  rotation={[0.08 + (isMoving ? Math.sin(walkCycle + i + 2) * 0.02 : 0), 0, 0]}
+                >
+                  <cylinderGeometry args={[0.005, 0.005, 0.035, 6]} />
+                  <meshPhysicalMaterial color="#fbbf24" roughness={0.4} metalness={0.0} />
+                </mesh>
+              ))}
+            </group>
+          </group>
+        </group>
+        
+        {/* Full body (invisible in first person but present for physics/collision) */}
+        <group visible={false}>
+          {/* Chess Wizard Body */}
+          <mesh position={[0, 0, 0]} castShadow>
+            <cylinderGeometry args={[0.15, 0.2, 0.6, 8]} />
+            <meshPhysicalMaterial color="#8b5a3c" roughness={0.3} metalness={0.1} clearcoat={0.5} />
+          </mesh>
+          
+          {/* Other body parts hidden but present */}
+          <mesh position={[0, 0.45, 0]} castShadow>
+            <sphereGeometry args={[0.12, 16, 16]} />
+            <meshPhysicalMaterial color="#fbbf24" roughness={0.4} metalness={0.0} clearcoat={0.3} />
+          </mesh>
+        </group>
+      </group>
     );
   }
 
   return (
-    <animated.group ref={avatarRef} position={animatedPosition} onClick={onClick} scale={animatedScale}>
-      {/* Avatar Body */}
+    <group ref={avatarRef} position={currentPosition} onClick={onClick} scale={0.15}>
+      {/* Chess Wizard Body */}
       <mesh position={[0, 0, 0]} castShadow>
         <cylinderGeometry args={[0.15, 0.2, 0.6, 8]} />
-        <meshPhysicalMaterial color={color} roughness={0.3} metalness={0.1} clearcoat={0.5} />
+        <meshPhysicalMaterial color="#8b5a3c" roughness={0.3} metalness={0.1} clearcoat={0.5} />
       </mesh>
 
-      {/* Avatar Head */}
+      {/* Wizard Head */}
       <mesh position={[0, 0.45, 0]} castShadow>
         <sphereGeometry args={[0.12, 16, 16]} />
         <meshPhysicalMaterial color="#fbbf24" roughness={0.4} metalness={0.0} clearcoat={0.3} />
       </mesh>
 
-      {/* Hat */}
+      {/* Wizard Hat */}
       <mesh position={[0, 0.55, 0]} castShadow>
         <coneGeometry args={[0.08, 0.15, 6]} />
-        <meshPhysicalMaterial color="#dc2626" roughness={0.2} metalness={0.3} clearcoat={0.7} />
+        <meshPhysicalMaterial color="#4c1d95" roughness={0.2} metalness={0.3} clearcoat={0.7} />
+      </mesh>
+
+      {/* Wizard Staff (in right hand) */}
+      <mesh position={[0.3, 0.2, 0]} rotation={[0, 0, 0.2]} castShadow>
+        <cylinderGeometry args={[0.01, 0.01, 0.8, 8]} />
+        <meshPhysicalMaterial color="#8b4513" roughness={0.6} metalness={0.0} />
+      </mesh>
+
+      {/* Staff Crystal */}
+      <mesh position={[0.35, 0.6, 0]} castShadow>
+        <sphereGeometry args={[0.03, 8, 8]} />
+        <meshPhysicalMaterial color="#60a5fa" emissive="#1e40af" emissiveIntensity={0.2} />
       </mesh>
 
       {/* Arms */}
       <mesh position={[-0.22, 0.1, 0]} rotation={[0, 0, -0.3]} castShadow>
         <cylinderGeometry args={[0.04, 0.04, 0.3, 6]} />
-        <meshPhysicalMaterial color={color} roughness={0.3} metalness={0.1} />
+        <meshPhysicalMaterial color="#8b5a3c" roughness={0.3} metalness={0.1} />
       </mesh>
 
       <mesh position={[0.22, 0.1, 0]} rotation={[0, 0, 0.3]} castShadow>
         <cylinderGeometry args={[0.04, 0.04, 0.3, 6]} />
-        <meshPhysicalMaterial color={color} roughness={0.3} metalness={0.1} />
+        <meshPhysicalMaterial color="#8b5a3c" roughness={0.3} metalness={0.1} />
+      </mesh>
+
+      {/* Wizard Robe Cape */}
+      <mesh position={[0, -0.1, -0.1]} castShadow>
+        <coneGeometry args={[0.25, 0.4, 8]} />
+        <meshPhysicalMaterial color="#4c1d95" roughness={0.4} metalness={0.0} />
       </mesh>
 
       {/* Name tag */}
@@ -376,7 +360,7 @@ export const DummyAvatar: React.FC<DummyAvatarProps> = ({
           WASD to move • TAB to switch to first person
         </Text>
       )}
-    </animated.group>
+    </group>
   );
 };
 

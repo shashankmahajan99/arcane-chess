@@ -21,6 +21,7 @@ export const CameraController: React.FC<CameraControllerProps> = ({
   );
 
   // Use free roam camera hook when in camera mode
+  // Note: The keyboard controls work with OrbitControls for mouse look
   useFreeRoamCamera(controlMode === 'camera');
 
   // This component doesn't render anything, it just manages camera controls

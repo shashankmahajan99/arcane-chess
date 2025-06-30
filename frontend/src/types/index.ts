@@ -102,7 +102,7 @@ export interface Vector3 {
 
 export interface ChessPiece {
   id: string;
-  type: 'pawn' | 'rook' | 'knight' | 'bishop' | 'queen' | 'king';
+  type: 'p' | 'r' | 'n' | 'b' | 'q' | 'k' | 'pawn' | 'rook' | 'knight' | 'bishop' | 'queen' | 'king'; // Support both single letter and full name formats
   color: 'white' | 'black';
   position: string; // e.g., "e4"
   hasMoved: boolean;
