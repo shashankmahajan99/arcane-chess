@@ -8,6 +8,10 @@ import { AvatarSelector } from "./components/3d/Avatar/AvatarSelector";
 import { DEFAULT_AVATARS, AvatarConfig } from "./components/3d/Avatar/AvatarConfig";
 import { useCameraSystem, AvatarMovementState } from "./hooks/useCameraSystem";
 import { useGameStore } from "./stores/gameStore";
+import { useAuthStore } from "./stores/authStore";
+import { Header } from "./components/UI/Header";
+import { ChatPanel } from "./components/Chat/ChatPanel";
+import { LobbyPanel } from "./components/Lobby/LobbyPanel";
 import * as THREE from 'three';
 
 // Camera Controller Component
@@ -34,6 +38,9 @@ function App() {
   // Initialize chess game
   const { initializeChess } = useGameStore();
   
+  // Initialize authentication
+  const { checkAuthStatus, setUser } = useAuthStore();
+  
   // Avatar movement state
   const [avatarState, setAvatarState] = useState<AvatarMovementState>({
     position: [7.5, 0.3, 7.5],
@@ -42,10 +49,11 @@ function App() {
     direction: 0
   });
 
-  // Initialize chess game on component mount
+  // Initialize chess game and check auth on component mount
   useEffect(() => {
     initializeChess(); // This will create a new chess game with the starting position
-  }, [initializeChess]);
+    checkAuthStatus(); // Check if user is already authenticated
+  }, [initializeChess, checkAuthStatus]);
 
   // Toggle control mode with Tab key and avatar selector with C key
   useEffect(() => {
@@ -80,6 +88,8 @@ function App() {
       className="bg-gray-900 text-white w-screen h-screen overflow-hidden relative"
       style={{ width: "100%", height: "100vh", overflow: "hidden" }}
     >
+      {/* Header with authentication */}
+      <Header />
       {/* Transition overlay */}
       {isTransitioning && (
         <div className="absolute inset-0 bg-black bg-opacity-50 z-30 flex items-center justify-center">
@@ -218,6 +228,12 @@ function App() {
           />
         </Suspense>
       </Canvas>
+      
+      {/* Lobby Panel */}
+      <LobbyPanel />
+      
+      {/* Chat Panel */}
+      <ChatPanel />
     </div>
   );
 }
